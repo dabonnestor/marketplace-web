@@ -8,18 +8,25 @@ import {
   deleteListing as apiDeleteListing,
   getMyListings,
 } from "@/lib/api/client"
-import type { CreateListingInput } from "@/lib/api/types"
+import type { CreateListingInput, Listing, Pagination } from "@/lib/api/types"
 
-export async function fetchListings(params?: {
-  page?: number
-  limit?: number
-  category?: string
-  minPrice?: number
-  maxPrice?: number
-  search?: string
-}) {
+type FetchListingsResult =
+  | { success: true; data: Listing[]; pagination: Pagination }
+  | { success: false; error: string }
+
+export async function fetchListings(
+  params?: {
+    page?: number
+    limit?: number
+    category?: string
+    minPrice?: number
+    maxPrice?: number
+    search?: string
+  }
+): Promise<FetchListingsResult> {
   try {
-    return { success: true, ...(await getListings(params)) }
+    const result = await getListings(params)
+    return { success: true, ...result }
   } catch (error) {
     return {
       success: false,
