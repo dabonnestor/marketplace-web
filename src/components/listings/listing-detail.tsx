@@ -47,7 +47,7 @@ function ActionButton({
 
   return (
     <Button asChild className="w-full">
-      <Link href={`/listings/${listing.id}/buy`}>Buy Now</Link>
+      <Link href={`/listings/${listing.id}/confirm`}>Buy Now</Link>
     </Button>
   )
 }
