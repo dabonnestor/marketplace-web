@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/query-provider"
+import { AuthHydrator } from "@/components/auth-hydrator"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
@@ -39,6 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
+            <AuthHydrator />
             {children}
             <Toaster />
           </QueryProvider>
