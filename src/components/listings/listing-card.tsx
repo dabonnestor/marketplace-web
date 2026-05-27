@@ -5,6 +5,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import type { Listing } from "@/lib/api/types"
 
+const conditionBadgeClass: Record<string, string> = {
+  "New": "bg-green-100 text-green-800 border-green-300",
+  "Like New": "bg-emerald-100 text-emerald-800 border-emerald-300",
+  "Good": "bg-blue-100 text-blue-800 border-blue-300",
+  "Fair": "bg-yellow-100 text-yellow-800 border-yellow-300",
+  "Poor": "bg-red-100 text-red-800 border-red-300",
+}
+
 export function ListingCard({ listing }: { listing: Listing }) {
   return (
     <Link href={`/listings/${listing.id}`}>
@@ -24,7 +32,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
           <h3 className="font-medium truncate">{listing.title}</h3>
           <p className="text-lg font-bold">${listing.price}</p>
           <div className="flex gap-2">
-            <Badge className="bg-secondary text-secondary-foreground">
+            <Badge className={conditionBadgeClass[listing.condition] ?? ""}>
               {listing.condition}
             </Badge>
             <Badge className="border">{listing.category}</Badge>

@@ -10,7 +10,7 @@ const listing: Listing = {
   description: "A beautiful vintage watch",
   price: "99.99",
   category: "Electronics",
-  condition: "like-new",
+  condition: "Like New",
   shippingCost: "5.00",
   images: ["https://example.com/watch.jpg"],
   status: "active",
@@ -26,7 +26,7 @@ describe("ListingCard", () => {
 
     expect(screen.getByText("$99.99")).toBeInTheDocument()
 
-    expect(screen.getByText("like-new")).toBeInTheDocument()
+    expect(screen.getByText("Like New")).toBeInTheDocument()
     expect(screen.getByText("Electronics")).toBeInTheDocument()
 
     const link = screen.getByRole("link")
