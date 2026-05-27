@@ -55,9 +55,7 @@ export default function RegisterPage() {
     <Card>
       <CardHeader>
         <CardTitle>Create Account</CardTitle>
-        <CardDescription>
-          Sign up to start buying and selling.
-        </CardDescription>
+        <CardDescription>Sign up to start buying and selling.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -68,7 +66,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
-                  <FormControl>
+                  <FormControl className="mt-2">
                     <Input placeholder="Your name" {...field} />
                   </FormControl>
                   <FormMessage />
@@ -81,8 +79,12 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
+                  <FormControl className="mt-2">
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -94,7 +96,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
-                  <FormControl>
+                  <FormControl className="mt-2">
                     <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
@@ -107,7 +109,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
+                  <FormControl className="mt-2">
                     <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
@@ -121,7 +123,10 @@ export default function RegisterPage() {
         </Form>
         <p className="text-sm text-muted-foreground mt-4 text-center">
           Already have an account?{" "}
-          <Link href="/login" className="underline underline-offset-4 hover:text-primary">
+          <Link
+            href="/login"
+            className="underline underline-offset-4 hover:text-primary"
+          >
             Sign in
           </Link>
         </p>
