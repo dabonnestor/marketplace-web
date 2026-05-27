@@ -47,7 +47,8 @@ export function CreateListingForm() {
   const router = useRouter()
 
   const form = useForm<CreateListingInput>({
-    resolver: zodResolver(createListingSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createListingSchema) as any,
     defaultValues: {
       title: "",
       description: "",
