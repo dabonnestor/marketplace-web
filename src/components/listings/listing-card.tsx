@@ -27,7 +27,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <Badge className="bg-secondary text-secondary-foreground">
               {listing.condition}
             </Badge>
-            <Badge className="border bg-background">{listing.category}</Badge>
+            <Badge className="border">{listing.category}</Badge>
           </div>
         </CardContent>
       </Card>

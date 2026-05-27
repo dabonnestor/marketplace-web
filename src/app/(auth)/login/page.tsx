@@ -68,8 +68,12 @@ export default function LoginPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
+                  <FormControl className="mt-2">
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -81,7 +85,7 @@ export default function LoginPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
-                  <FormControl>
+                  <FormControl className="mt-2">
                     <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
@@ -95,7 +99,10 @@ export default function LoginPage() {
         </Form>
         <p className="text-sm text-muted-foreground mt-4 text-center">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="underline underline-offset-4 hover:text-primary">
+          <Link
+            href="/register"
+            className="underline underline-offset-4 hover:text-primary"
+          >
             Sign up
           </Link>
         </p>
