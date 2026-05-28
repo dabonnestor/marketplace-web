@@ -18,14 +18,32 @@ function calcPlatformFee(price: string): string {
   return (parseFloat(price) * 0.05).toFixed(2)
 }
 
-function calcTotal(price: string, shipping: string, platformFee: string): string {
-  return (parseFloat(price) + parseFloat(shipping) + parseFloat(platformFee)).toFixed(2)
+function calcTotal(
+  price: string,
+  shipping: string,
+  platformFee: string,
+): string {
+  return (
+    parseFloat(price) +
+    parseFloat(shipping) +
+    parseFloat(platformFee)
+  ).toFixed(2)
 }
 
-function PriceRow({ label, amount, bold }: { label: string; amount: string; bold?: boolean }) {
+function PriceRow({
+  label,
+  amount,
+  bold,
+}: {
+  label: string
+  amount: string
+  bold?: boolean
+}) {
   return (
     <div className="flex justify-between text-sm">
-      <span className={bold ? "font-semibold" : "text-muted-foreground"}>{label}</span>
+      <span className={bold ? "font-semibold" : "text-muted-foreground"}>
+        {label}
+      </span>
       <span className={bold ? "font-semibold" : ""}>{amount}</span>
     </div>
   )
@@ -49,7 +67,9 @@ export function ConfirmPurchase({
   if (listing.status === "sold") {
     return (
       <div className="max-w-lg mx-auto py-16 text-center space-y-4">
-        <h1 className="text-xl font-semibold">This listing is no longer available</h1>
+        <h1 className="text-xl font-semibold">
+          This listing is no longer available
+        </h1>
         <p className="text-muted-foreground">
           It looks like someone already purchased this item.
         </p>
@@ -88,8 +108,10 @@ export function ConfirmPurchase({
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold">Confirm your purchase</h1>
-        <p className="text-muted-foreground mt-1">Review the details before placing your order.</p>
+        <h1 className="mt-4 text-2xl font-bold">Confirm your purchase</h1>
+        <p className="text-muted-foreground mt-1">
+          Review the details before placing your order.
+        </p>
       </div>
 
       <Card>
@@ -98,18 +120,20 @@ export function ConfirmPurchase({
         </CardHeader>
         <CardContent className="space-y-3">
           <PriceRow label="Subtotal" amount={formatCurrency(listing.price)} />
-          <PriceRow label="Shipping" amount={formatCurrency(listing.shippingCost)} />
-          <PriceRow label="Platform fee (5%)" amount={formatCurrency(platformFee)} />
+          <PriceRow
+            label="Shipping"
+            amount={formatCurrency(listing.shippingCost)}
+          />
+          <PriceRow
+            label="Platform fee (5%)"
+            amount={formatCurrency(platformFee)}
+          />
           <Separator />
           <PriceRow label="Total" amount={formatCurrency(total)} bold />
         </CardContent>
       </Card>
 
-      <Button
-        onClick={handleConfirm}
-        disabled={isPending}
-        className="w-full"
-      >
+      <Button onClick={handleConfirm} disabled={isPending} className="w-full">
         {isPending ? "Confirming..." : "Confirm Purchase"}
       </Button>
     </div>
