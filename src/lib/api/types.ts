@@ -95,6 +95,12 @@ export interface CreateListingInput {
 
 export interface UpdateListingInput extends Partial<CreateListingInput> {}
 
+export interface PurchaseOrder extends Order {
+  listingTitle: string
+  listingImage: string | null
+  sellerName: string
+}
+
 export interface OrderStatusTransition {
   status: Exclude<OrderStatus, "pending">
 }
