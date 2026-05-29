@@ -1,9 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { deleteListing } from "@/actions/listings"
 import type { Listing } from "@/lib/api/types"
 
 function formatDate(dateStr: string) {
@@ -29,6 +41,24 @@ function ActionButton({
   listing: Listing
   currentUserId: string | null
 }) {
+  const router = useRouter()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  async function handleDelete() {
+    setIsDeleting(true)
+    const result = await deleteListing(listing.id)
+    setIsDeleting(false)
+    setShowDeleteDialog(false)
+
+    if (result.success) {
+      toast.success("Listing deleted")
+      router.push("/listings")
+    } else {
+      toast.error(result.error || "Failed to delete listing")
+    }
+  }
+
   if (currentUserId === null) {
     return (
       <Button asChild className="w-full">
@@ -39,9 +69,51 @@ function ActionButton({
 
   if (currentUserId === listing.sellerId) {
     return (
-      <Button asChild variant="outline" className="w-full">
-        <Link href={`/listings/${listing.id}/edit`}>Edit</Link>
-      </Button>
+      <>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="flex-1">
+            <Link href={`/listings/${listing.id}/edit`}>Edit</Link>
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            Delete
+          </Button>
+        </div>
+        <Dialog
+          open={showDeleteDialog}
+          onOpenChange={(open) => {
+            if (!open) setShowDeleteDialog(false)
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you sure?</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this listing? This action cannot
+                be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Confirm"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     )
   }
 

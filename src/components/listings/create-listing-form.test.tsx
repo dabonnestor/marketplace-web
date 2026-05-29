@@ -3,11 +3,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { CreateListingForm } from "@/components/listings/create-listing-form"
+import type { Listing } from "@/lib/api/types"
 
-const { mockPush, mockCreateListing, mockSuccessToast, mockErrorToast, mockUploadImages } =
+const { mockPush, mockCreateListing, mockUpdateListing, mockDeleteListing, mockSuccessToast, mockErrorToast, mockUploadImages } =
   vi.hoisted(() => ({
     mockPush: vi.fn(),
     mockCreateListing: vi.fn(),
+    mockUpdateListing: vi.fn(),
+    mockDeleteListing: vi.fn(),
     mockSuccessToast: vi.fn(),
     mockErrorToast: vi.fn(),
     mockUploadImages: vi.fn(),
@@ -19,6 +22,8 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/actions/listings", () => ({
   createListing: mockCreateListing,
+  updateListing: mockUpdateListing,
+  deleteListing: mockDeleteListing,
 }))
 
 vi.mock("@/actions/upload", () => ({
@@ -126,6 +131,8 @@ describe("CreateListingForm", () => {
   beforeEach(() => {
     mockPush.mockClear()
     mockCreateListing.mockClear()
+    mockUpdateListing.mockClear()
+    mockDeleteListing.mockClear()
     mockSuccessToast.mockClear()
     mockErrorToast.mockClear()
     mockUploadImages.mockClear()
@@ -228,6 +235,281 @@ describe("CreateListingForm", () => {
 
     // Resolve so the test can clean up
     resolvePromise!({ success: true, listing: { id: "new-123" } })
+  })
+
+  describe("edit mode", () => {
+    const editListing: Listing = {
+      id: "edit-123",
+      sellerId: "seller-1",
+      title: "Vintage Watch",
+      description: "A beautiful vintage watch",
+      price: "99.99",
+      category: "Electronics",
+      condition: "Like New",
+      shippingCost: "5.00",
+      images: ["https://example.com/watch.jpg"],
+      status: "active",
+      createdAt: "2025-01-01",
+      updatedAt: "2025-01-02",
+    }
+
+    it("pre-populates form fields with existing listing data", () => {
+      render(<CreateListingForm listing={editListing} />)
+
+      expect(screen.getByLabelText("Title")).toHaveValue("Vintage Watch")
+      expect(screen.getByLabelText("Description")).toHaveValue(
+        "A beautiful vintage watch"
+      )
+      expect(screen.getByLabelText("Price")).toHaveValue(99.99)
+      expect(screen.getByLabelText("Category")).toHaveValue("Electronics")
+      expect(screen.getByLabelText("Condition")).toHaveValue("Like New")
+    })
+
+    it("renders edit-specific title and submit button", () => {
+      render(<CreateListingForm listing={editListing} />)
+
+      expect(screen.getByText("Edit Listing")).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /save changes/i })
+      ).toBeInTheDocument()
+    })
+
+    it("shows existing image URLs with remove buttons", () => {
+      render(<CreateListingForm listing={editListing} />)
+
+      expect(screen.getByText(/watch\.jpg/)).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: /remove/i })).toBeInTheDocument()
+    })
+
+    it("removes an existing image when the remove button is clicked", async () => {
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      expect(screen.getByText(/watch\.jpg/)).toBeInTheDocument()
+
+      await user.click(screen.getByRole("button", { name: /remove/i }))
+      expect(screen.queryByText(/watch\.jpg/)).not.toBeInTheDocument()
+    })
+
+    it("calls updateListing on submit and redirects", async () => {
+      mockUpdateListing.mockResolvedValue({
+        success: true,
+        listing: { id: "edit-123" },
+      })
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      // Change title to trigger a modification
+      const titleInput = screen.getByLabelText("Title")
+      await user.clear(titleInput)
+      await user.type(titleInput, "Updated Watch")
+
+      await user.click(
+        screen.getByRole("button", { name: /save changes/i })
+      )
+
+      await waitFor(() => {
+        expect(mockUpdateListing).toHaveBeenCalledWith(
+          "edit-123",
+          expect.objectContaining({
+            title: "Updated Watch",
+            description: "A beautiful vintage watch",
+            price: 99.99,
+            category: "Electronics",
+            condition: "Like New",
+          })
+        )
+        expect(mockPush).toHaveBeenCalledWith("/listings/edit-123")
+        expect(mockSuccessToast).toHaveBeenCalled()
+      })
+    })
+
+    it("shows error toast when updateListing fails", async () => {
+      mockUpdateListing.mockResolvedValue({
+        success: false,
+        error: "Update failed",
+      })
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /save changes/i })
+      )
+
+      await waitFor(() => {
+        expect(mockErrorToast).toHaveBeenCalledWith("Update failed")
+      })
+      expect(mockPush).not.toHaveBeenCalled()
+    })
+
+    it("keeps existing images if no new files are uploaded", async () => {
+      mockUpdateListing.mockResolvedValue({
+        success: true,
+        listing: { id: "edit-123" },
+      })
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /save changes/i })
+      )
+
+      await waitFor(() => {
+        expect(mockUpdateListing).toHaveBeenCalledWith(
+          "edit-123",
+          expect.objectContaining({
+            images: ["https://example.com/watch.jpg"],
+          })
+        )
+      })
+    })
+
+    it("supports adding new images alongside existing ones", async () => {
+      mockUploadImages.mockResolvedValue({
+        success: true,
+        urls: ["https://example.com/new.jpg"],
+      })
+      mockUpdateListing.mockResolvedValue({
+        success: true,
+        listing: { id: "edit-123" },
+      })
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      // Upload a new file (label is "Add Images" in edit mode)
+      const file = new File(["new"], "new.jpg", { type: "image/jpeg" })
+      const fileInput = screen.getByLabelText("Add Images") as HTMLInputElement
+      await user.upload(fileInput, file)
+
+      await user.click(
+        screen.getByRole("button", { name: /save changes/i })
+      )
+
+      await waitFor(() => {
+        expect(mockUpdateListing).toHaveBeenCalledWith(
+          "edit-123",
+          expect.objectContaining({
+            images: [
+              "https://example.com/watch.jpg",
+              "https://example.com/new.jpg",
+            ],
+          })
+        )
+      })
+    })
+
+    it("shows loading state during edit submission", async () => {
+      let resolvePromise: (v: unknown) => void
+      const pending = new Promise((resolve) => {
+        resolvePromise = resolve
+      })
+      mockUpdateListing.mockReturnValue(pending)
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /save changes/i })
+      )
+
+      expect(
+        screen.getByRole("button", { name: /saving/i })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole("button", { name: /saving/i })
+      ).toBeDisabled()
+
+      resolvePromise!({ success: true, listing: { id: "edit-123" } })
+    })
+
+    it("shows Delete button only in edit mode", () => {
+      const { rerender } = render(
+        <CreateListingForm listing={editListing} />
+      )
+
+      expect(
+        screen.getByRole("button", { name: /delete listing/i })
+      ).toBeInTheDocument()
+
+      rerender(<CreateListingForm />)
+
+      expect(
+        screen.queryByRole("button", { name: /delete listing/i })
+      ).not.toBeInTheDocument()
+    })
+
+    it("opens delete confirmation dialog", async () => {
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /delete listing/i })
+      )
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument()
+      expect(
+        screen.getByText(/this action cannot be undone/i)
+      ).toBeInTheDocument()
+    })
+
+    it("calls deleteListing and redirects on delete confirm", async () => {
+      mockDeleteListing.mockResolvedValue({ success: true })
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /delete listing/i })
+      )
+      await user.click(
+        screen.getByRole("button", { name: /confirm/i })
+      )
+
+      await waitFor(() => {
+        expect(mockDeleteListing).toHaveBeenCalledWith("edit-123")
+        expect(mockSuccessToast).toHaveBeenCalled()
+        expect(mockPush).toHaveBeenCalledWith("/listings")
+      })
+    })
+
+    it("shows error toast when delete fails", async () => {
+      mockDeleteListing.mockResolvedValue({
+        success: false,
+        error: "Cannot delete",
+      })
+
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /delete listing/i })
+      )
+      await user.click(
+        screen.getByRole("button", { name: /confirm/i })
+      )
+
+      await waitFor(() => {
+        expect(mockErrorToast).toHaveBeenCalledWith("Cannot delete")
+      })
+      expect(mockPush).not.toHaveBeenCalled()
+    })
+
+    it("closes delete dialog when Cancel is clicked", async () => {
+      const user = userEvent.setup()
+      render(<CreateListingForm listing={editListing} />)
+
+      await user.click(
+        screen.getByRole("button", { name: /delete listing/i })
+      )
+      expect(screen.getByRole("dialog")).toBeInTheDocument()
+
+      await user.click(screen.getByRole("button", { name: /cancel/i }))
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
   })
 
   describe("image upload", () => {
