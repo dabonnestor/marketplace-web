@@ -29,8 +29,8 @@ describe("ListingCard", () => {
     expect(screen.getByText("Like New")).toBeInTheDocument()
     expect(screen.getByText("Electronics")).toBeInTheDocument()
 
-    const link = screen.getByRole("link")
-    expect(link).toHaveAttribute("href", "/listings/abc-123")
+    const links = screen.getAllByRole("link")
+    expect(links[0]).toHaveAttribute("href", "/listings/abc-123")
   })
 
   it("shows placeholder text when listing has no images", () => {
