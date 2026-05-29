@@ -37,12 +37,31 @@ import {
   CATEGORIES,
   CONDITIONS,
 } from "@/lib/validations/listings"
-import { createListing } from "@/actions/listings"
+import { createListing, updateListing, deleteListing } from "@/actions/listings"
 import { uploadImages } from "@/actions/upload"
+import type { Listing } from "@/lib/api/types"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-export function CreateListingForm() {
+interface CreateListingFormProps {
+  listing?: Listing
+}
+
+export function CreateListingForm({ listing }: CreateListingFormProps) {
+  const isEdit = !!listing
   const [isPending, setIsPending] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [existingImages, setExistingImages] = useState<string[]>(
+    listing?.images ?? []
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
@@ -50,13 +69,15 @@ export function CreateListingForm() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createListingSchema) as any,
     defaultValues: {
-      title: "",
-      description: "",
-      price: "" as unknown as number,
-      category: "",
-      condition: "",
-      shippingCost: "" as unknown as number,
-      images: [],
+      title: listing?.title ?? "",
+      description: listing?.description ?? "",
+      price: (listing ? parseFloat(listing.price) : "") as unknown as number,
+      category: listing?.category ?? "",
+      condition: listing?.condition ?? "",
+      shippingCost: (listing
+        ? parseFloat(listing.shippingCost)
+        : "") as unknown as number,
+      images: listing?.images ?? [],
     },
   })
 
@@ -71,11 +92,15 @@ export function CreateListingForm() {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
+  function removeExistingImage(index: number) {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index))
+  }
+
   async function onSubmit(data: CreateListingInput) {
     setIsPending(true)
 
-    // Upload images first if any
-    let imageUrls: string[] = []
+    // Upload new images if any
+    let newImageUrls: string[] = []
     if (selectedFiles.length > 0) {
       const formData = new FormData()
       selectedFiles.forEach((f) => formData.append("files", f))
@@ -85,26 +110,58 @@ export function CreateListingForm() {
         toast.error(uploadResult.error || "Failed to upload images")
         return
       }
-      imageUrls = uploadResult.urls ?? []
+      newImageUrls = uploadResult.urls ?? []
     }
 
-    const result = await createListing({ ...data, images: imageUrls })
-    setIsPending(false)
+    const mergedImages = [...existingImages, ...newImageUrls]
+    const payload = { ...data, images: mergedImages }
 
-    if (result.success && result.listing) {
-      toast.success("Listing created!")
-      router.push(`/listings/${result.listing.id}`)
+    if (isEdit) {
+      const result = await updateListing(listing.id, payload)
+      setIsPending(false)
+
+      if (result.success && result.listing) {
+        toast.success("Listing updated!")
+        router.push(`/listings/${result.listing.id}`)
+      } else {
+        toast.error(result.error || "Failed to update listing")
+      }
     } else {
-      toast.error(result.error || "Failed to create listing")
+      const result = await createListing(payload)
+      setIsPending(false)
+
+      if (result.success && result.listing) {
+        toast.success("Listing created!")
+        router.push(`/listings/${result.listing.id}`)
+      } else {
+        toast.error(result.error || "Failed to create listing")
+      }
+    }
+  }
+
+  async function handleDelete() {
+    if (!listing) return
+    setIsDeleting(true)
+    const result = await deleteListing(listing.id)
+    setIsDeleting(false)
+    setShowDeleteDialog(false)
+
+    if (result.success) {
+      toast.success("Listing deleted")
+      router.push("/listings")
+    } else {
+      toast.error(result.error || "Failed to delete listing")
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Listing</CardTitle>
+        <CardTitle>{isEdit ? "Edit Listing" : "Create Listing"}</CardTitle>
         <CardDescription>
-          Fill in the details below to list your item for sale.
+          {isEdit
+            ? "Update your listing details below."
+            : "Fill in the details below to list your item for sale."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -207,13 +264,41 @@ export function CreateListingForm() {
               )}
             />
 
+            {/* Existing images (edit mode only) */}
+            {existingImages.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Current Images</p>
+                <ul className="space-y-1">
+                  {existingImages.map((url, i) => {
+                    const filename = url.split("/").pop() ?? url
+                    return (
+                      <li
+                        key={url}
+                        className="flex items-center justify-between rounded-md bg-accent/50 px-3 py-1.5 text-sm"
+                      >
+                        <span className="truncate">{filename}</span>
+                        <button
+                          type="button"
+                          aria-label="Remove"
+                          className="ml-2 shrink-0 rounded p-0.5 hover:bg-accent"
+                          onClick={() => removeExistingImage(i)}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+
             {/* Image picker */}
             <div className="space-y-2">
               <label
                 htmlFor="listing-images"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Images
+                {isEdit ? "Add Images" : "Images"}
               </label>
               <div
                 className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-input px-4 py-6 text-sm text-muted-foreground hover:border-muted-foreground/50 mt-2"
@@ -253,8 +338,58 @@ export function CreateListingForm() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Creating listing..." : "Create Listing"}
+              {isPending
+                ? isEdit
+                  ? "Saving..."
+                  : "Creating listing..."
+                : isEdit
+                  ? "Save Changes"
+                  : "Create Listing"}
             </Button>
+
+            {isEdit && (
+              <>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  Delete Listing
+                </Button>
+                <Dialog
+                  open={showDeleteDialog}
+                  onOpenChange={(open) => {
+                    if (!open) setShowDeleteDialog(false)
+                  }}
+                >
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Are you sure?</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete this listing? This
+                        action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDeleteDialog(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Confirm"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </form>
         </Form>
       </CardContent>
