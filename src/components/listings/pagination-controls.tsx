@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 export function PaginationControls({
   page,
   totalPages,
+  baseUrl,
 }: {
   page: number
   totalPages: number
+  baseUrl?: string
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -18,9 +20,10 @@ export function PaginationControls({
     (newPage: number) => {
       const params = new URLSearchParams(searchParams.toString())
       params.set("page", String(newPage))
-      router.push(`/listings?${params.toString()}`)
+      const path = baseUrl ?? "/listings"
+      router.push(`${path}?${params.toString()}`)
     },
-    [router, searchParams]
+    [router, searchParams, baseUrl]
   )
 
   return (
