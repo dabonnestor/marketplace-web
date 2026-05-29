@@ -7,6 +7,7 @@ import type {
   PaginatedResponse,
   Order,
   PurchaseOrder,
+  SaleOrder,
   CreateListingInput,
   UpdateListingInput,
   OrderStatusTransition,
@@ -263,7 +264,7 @@ export async function getSales(params?: {
     }
   }
   const query = searchParams.toString()
-  return apiFetch<PaginatedResponse<Order>>(
+  return apiFetch<PaginatedResponse<SaleOrder>>(
     `/api/v1/orders/seller/sales${query ? `?${query}` : ""}`
   )
 }

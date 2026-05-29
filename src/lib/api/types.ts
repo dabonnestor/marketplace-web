@@ -101,6 +101,12 @@ export interface PurchaseOrder extends Order {
   sellerName: string
 }
 
+export interface SaleOrder extends Order {
+  listingTitle: string
+  listingImage: string | null
+  buyerName: string
+}
+
 export interface OrderStatusTransition {
   status: Exclude<OrderStatus, "pending">
 }
