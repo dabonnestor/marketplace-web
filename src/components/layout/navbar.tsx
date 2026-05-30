@@ -10,9 +10,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { useAuthStore } from "@/stores/auth-store"
 import { logout } from "@/actions/auth"
-import { Package, Plus, User } from "lucide-react"
+import { Menu, Package, Plus, User } from "lucide-react"
+import { toast } from "sonner"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Navbar() {
@@ -22,8 +30,17 @@ export function Navbar() {
   async function handleLogout() {
     await logout()
     useAuthStore.getState().setUser(null)
+    toast.success("Signed out")
     router.push("/")
   }
+
+  const navLinks = user
+    ? [
+        { href: "/dashboard/purchases", label: "My Purchases" },
+        { href: "/dashboard/sales", label: "My Sales" },
+        { href: "/dashboard/listings", label: "My Listings" },
+      ]
+    : []
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
@@ -33,7 +50,65 @@ export function Navbar() {
           Marketplace
         </Link>
 
-        <div className="flex items-center gap-3">
+        {/* Mobile: hamburger + theme */}
+        <div className="flex items-center gap-3 md:hidden">
+          <ThemeToggle />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <SheetHeader>
+                <SheetTitle>
+                  {user ? user.name : "Menu"}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-1 mt-4">
+                {user ? (
+                  <>
+                    <Button variant="outline" asChild className="justify-start">
+                      <Link href="/listings/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Sell
+                      </Link>
+                    </Button>
+                    {navLinks.map((link) => (
+                      <Button
+                        key={link.href}
+                        variant="ghost"
+                        asChild
+                        className="justify-start"
+                      >
+                        <Link href={link.href}>{link.label}</Link>
+                      </Button>
+                    ))}
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={handleLogout}
+                    >
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" asChild className="justify-start">
+                      <Link href="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild className="justify-start">
+                      <Link href="/register">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Desktop: full nav */}
+        <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
 
           {user ? (
@@ -55,15 +130,11 @@ export function Navbar() {
                     {user.name}
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/purchases">My Purchases</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/sales">My Sales</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/listings">My Listings</Link>
-                  </DropdownMenuItem>
+                  {navLinks.map((link) => (
+                    <DropdownMenuItem key={link.href} asChild>
+                      <Link href={link.href}>{link.label}</Link>
+                    </DropdownMenuItem>
+                  ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     Sign Out

@@ -47,7 +47,16 @@ export default function RegisterPage() {
       toast.success("Account created!")
       router.push("/")
     } else {
-      toast.error(result.error || "Registration failed")
+      const message = result.error || "Registration failed"
+      // Map server errors to relevant fields
+      if (message.toLowerCase().includes("password")) {
+        form.setError("password", { message })
+      } else if (message.toLowerCase().includes("email")) {
+        form.setError("email", { message })
+      } else {
+        form.setError("email", { message })
+      }
+      toast.error(message)
     }
   }
 

@@ -216,6 +216,22 @@ describe("CreateListingForm", () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
+  it("maps server error to title field when error mentions title", async () => {
+    mockCreateListing.mockResolvedValue({
+      success: false,
+      error: "A listing with this title already exists",
+    })
+
+    const user = await fillValidForm()
+    await user.click(screen.getByRole("button", { name: /create listing/i }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("A listing with this title already exists")
+      ).toBeInTheDocument()
+    })
+  })
+
   it("shows loading state during submission", async () => {
     // Never resolve — keeps the form in pending state
     let resolvePromise: (v: unknown) => void

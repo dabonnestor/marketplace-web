@@ -50,18 +50,18 @@ export function ListingFilters({ categories }: { categories: string[] }) {
   }, [debouncedSearch])
 
   return (
-    <div className="flex flex-wrap gap-3 mb-6">
+    <div className="flex flex-col md:flex-row gap-3 mb-6">
       <Input
         placeholder="Search listings..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
+        className="w-full md:max-w-sm min-h-11"
       />
       <Select
         value={searchParams.get("category") || "all"}
         onValueChange={(v) => updateParams({ category: v })}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full md:w-[180px] min-h-11">
           <SelectValue placeholder="All categories" />
         </SelectTrigger>
         <SelectContent>
@@ -78,14 +78,14 @@ export function ListingFilters({ categories }: { categories: string[] }) {
         type="number"
         defaultValue={searchParams.get("minPrice") || ""}
         onBlur={(e) => updateParams({ minPrice: e.target.value || undefined })}
-        className="w-[100px]"
+        className="w-full md:w-[100px] min-h-11"
       />
       <Input
         placeholder="Max"
         type="number"
         defaultValue={searchParams.get("maxPrice") || ""}
         onBlur={(e) => updateParams({ maxPrice: e.target.value || undefined })}
-        className="w-[100px]"
+        className="w-full md:w-[100px] min-h-11"
       />
     </div>
   )

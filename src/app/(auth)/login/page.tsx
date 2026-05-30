@@ -47,7 +47,14 @@ export default function LoginPage() {
       toast.success("Welcome back!")
       router.push("/")
     } else {
-      toast.error(result.error || "Login failed")
+      const message = result.error || "Login failed"
+      // Map server errors to relevant fields
+      if (message.toLowerCase().includes("password")) {
+        form.setError("password", { message })
+      } else {
+        form.setError("email", { message })
+      }
+      toast.error(message)
     }
   }
 

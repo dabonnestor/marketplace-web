@@ -116,6 +116,16 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
     const mergedImages = [...existingImages, ...newImageUrls]
     const payload = { ...data, images: mergedImages }
 
+    function setServerError(message: string) {
+      const lower = message.toLowerCase()
+      if (lower.includes("title")) form.setError("title", { message })
+      else if (lower.includes("description")) form.setError("description", { message })
+      else if (lower.includes("price")) form.setError("price", { message })
+      else if (lower.includes("category")) form.setError("category", { message })
+      else if (lower.includes("condition")) form.setError("condition", { message })
+      else form.setError("title", { message })
+    }
+
     if (isEdit) {
       const result = await updateListing(listing.id, payload)
       setIsPending(false)
@@ -124,7 +134,9 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
         toast.success("Listing updated!")
         router.push(`/listings/${result.listing.id}`)
       } else {
-        toast.error(result.error || "Failed to update listing")
+        const message = result.error || "Failed to update listing"
+        setServerError(message)
+        toast.error(message)
       }
     } else {
       const result = await createListing(payload)
@@ -134,7 +146,9 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
         toast.success("Listing created!")
         router.push(`/listings/${result.listing.id}`)
       } else {
-        toast.error(result.error || "Failed to create listing")
+        const message = result.error || "Failed to create listing"
+        setServerError(message)
+        toast.error(message)
       }
     }
   }
