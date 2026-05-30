@@ -32,7 +32,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <body>
+      <body className="overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

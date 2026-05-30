@@ -18,8 +18,9 @@ export default function DashboardLayout({
   const pathname = usePathname()
 
   return (
-    <div className="flex gap-8">
-      <nav className="w-48 shrink-0">
+    <div className="flex flex-col md:flex-row md:gap-8 gap-4">
+      {/* Desktop sidebar */}
+      <nav className="hidden md:block w-48 shrink-0">
         <h2 className="font-semibold mb-3 text-lg">Dashboard</h2>
         <ul className="space-y-1">
           {links.map((link) => (
@@ -39,6 +40,28 @@ export default function DashboardLayout({
           ))}
         </ul>
       </nav>
+
+      {/* Mobile tabs */}
+      <div className="md:hidden">
+        <h2 className="font-semibold mb-2 text-lg">Dashboard</h2>
+        <nav className="flex gap-1 border-b overflow-x-auto">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "shrink-0 px-3 py-2 text-sm font-medium border-b-2 transition-colors",
+                pathname === link.href
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
       <div className="flex-1">{children}</div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { ErrorBoundary } from "@/components/error-boundary"
 
-export default function ListingDetailError({
+export default function DashboardListingsError({
   error,
   unstable_retry,
 }: {

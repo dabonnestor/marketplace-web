@@ -134,13 +134,13 @@ export function ListingDetail({
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {listing.images.length > 0 ? (
-        <div className="flex gap-2 overflow-x-auto rounded-xl">
+        <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory rounded-xl">
           {listing.images.map((url, i) => (
             <img
               key={i}
               src={url}
               alt={listing.title}
-              className="w-full rounded-xl object-cover aspect-video"
+              className="w-full shrink-0 snap-center rounded-xl object-cover aspect-video"
             />
           ))}
         </div>
