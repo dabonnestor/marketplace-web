@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import type { Listing } from "@/lib/api/types"
-
-function formatCurrency(amount: string): string {
-  return `$${parseFloat(amount).toFixed(2)}`
-}
+import { formatCurrency } from "@/lib/display-utils"
 
 function calcPlatformFee(price: string): string {
   return (parseFloat(price) * 0.05).toFixed(2)

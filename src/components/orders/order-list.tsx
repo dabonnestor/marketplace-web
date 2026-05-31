@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPurchases, fetchSales } from "@/actions/orders"
 import type { PurchaseOrder, SaleOrder, Pagination } from "@/lib/api/types"
 import { statusColor, statusLabel } from "@/lib/order-utils"
+import { badgeClasses, NoImage } from "@/lib/display-utils"
 import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
@@ -14,14 +15,6 @@ type Order = PurchaseOrder | SaleOrder
 type Role = "buyer" | "seller"
 
 const STATUSES = ["pending", "paid", "shipped", "delivered", "completed", "cancelled"] as const
-
-const badgeClasses: Record<string, string> = {
-  gray: "bg-gray-100 text-gray-800 border-gray-300",
-  blue: "bg-blue-100 text-blue-800 border-blue-300",
-  orange: "bg-orange-100 text-orange-800 border-orange-300",
-  green: "bg-green-100 text-green-800 border-green-300",
-  red: "bg-red-100 text-red-800 border-red-300",
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString()
@@ -228,9 +221,7 @@ export function OrderList({ role }: OrderListProps) {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    No image
-                  </div>
+                  <NoImage className="h-full w-full" />
                 )}
               </div>
               <div className="min-w-0">

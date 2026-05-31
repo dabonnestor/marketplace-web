@@ -11,6 +11,7 @@ import {
   statusLabel,
 } from "@/lib/order-utils"
 import { cn } from "@/lib/utils"
+import { formatCurrency, badgeClasses, NoImage } from "@/lib/display-utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -37,10 +38,6 @@ const STATUS_STEPS: OrderStatus[] = [
   "completed",
 ]
 
-function formatCurrency(amount: string): string {
-  return `$${parseFloat(amount).toFixed(2)}`
-}
-
 function actionLabel(status: OrderStatus): string {
   switch (status) {
     case "paid":
@@ -54,14 +51,6 @@ function actionLabel(status: OrderStatus): string {
     default:
       return `Mark as ${statusLabel(status)}`
   }
-}
-
-const badgeClasses: Record<string, string> = {
-  gray: "bg-gray-100 text-gray-800 border-gray-300",
-  blue: "bg-blue-100 text-blue-800 border-blue-300",
-  orange: "bg-orange-100 text-orange-800 border-orange-300",
-  green: "bg-green-100 text-green-800 border-green-300",
-  red: "bg-red-100 text-red-800 border-red-300",
 }
 
 function PriceRow({
@@ -210,9 +199,7 @@ export function OrderDetail({
           className="w-full rounded-xl object-cover aspect-video"
         />
       ) : (
-        <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
-          <p className="text-muted-foreground">No image</p>
-        </div>
+        <NoImage className="aspect-video rounded-xl" />
       )}
 
       <StatusProgress status={order.status} />

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { deleteListing } from "@/actions/listings"
 import type { Listing } from "@/lib/api/types"
+import { conditionBadgeClass, NoImage } from "@/lib/display-utils"
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -24,14 +25,6 @@ function formatDate(dateStr: string) {
     month: "long",
     day: "numeric",
   })
-}
-
-const conditionBadgeClass: Record<string, string> = {
-  "New": "bg-green-100 text-green-800 border-green-300",
-  "Like New": "bg-emerald-100 text-emerald-800 border-emerald-300",
-  "Good": "bg-blue-100 text-blue-800 border-blue-300",
-  "Fair": "bg-yellow-100 text-yellow-800 border-yellow-300",
-  "Poor": "bg-red-100 text-red-800 border-red-300",
 }
 
 function ActionButton({
@@ -145,9 +138,7 @@ export function ListingDetail({
           ))}
         </div>
       ) : (
-        <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
-          <p className="text-muted-foreground">No image</p>
-        </div>
+        <NoImage className="aspect-video rounded-xl" />
       )}
 
       <div className="space-y-2">
