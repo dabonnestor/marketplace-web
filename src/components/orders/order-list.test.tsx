@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { PurchaseHistory } from "@/components/orders/purchase-history"
-import type { PurchaseOrder, Pagination } from "@/lib/api/types"
+import { OrderList } from "@/components/orders/order-list"
+import type { PurchaseOrder, SaleOrder, Pagination } from "@/lib/api/types"
 
 const { mockPush } = vi.hoisted(() => ({
   mockPush: vi.fn(),
@@ -19,9 +19,9 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
-import { fetchPurchases } from "@/actions/orders"
+import { fetchPurchases, fetchSales } from "@/actions/orders"
 
-function makePurchase(overrides: Partial<PurchaseOrder> = {}): PurchaseOrder {
+function makeOrder(overrides: Partial<PurchaseOrder | SaleOrder> = {}): PurchaseOrder | SaleOrder {
   return {
     id: "order-1",
     buyerId: "buyer-1",
@@ -30,6 +30,7 @@ function makePurchase(overrides: Partial<PurchaseOrder> = {}): PurchaseOrder {
     listingTitle: "Vintage Watch",
     listingImage: "https://example.com/watch.jpg",
     sellerName: "Alice",
+    buyerName: "Bob",
     status: "paid",
     subtotal: "100.00",
     shippingCost: "7.50",
@@ -55,35 +56,54 @@ function wrapper({ children }: { children: React.ReactNode }) {
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>
 }
 
-describe("PurchaseHistory", () => {
+describe.each([
+  {
+    role: "buyer" as const,
+    fetcher: "fetchPurchases",
+    baseUrl: "/dashboard/purchases",
+    counterpartyName: "Alice",
+    emptyPattern: /no purchases yet/i,
+    ctaPattern: /browse/i,
+  },
+  {
+    role: "seller" as const,
+    fetcher: "fetchSales",
+    baseUrl: "/dashboard/sales",
+    counterpartyName: "Bob",
+    emptyPattern: /no sales yet/i,
+    ctaPattern: /create/i,
+  },
+])("OrderList role=$role", ({ role, fetcher, baseUrl, counterpartyName, emptyPattern, ctaPattern }) => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it("renders purchase rows with listing title, seller name, price, status badge, and date", async () => {
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+  const mockFetcher = () => (fetcher === "fetchPurchases" ? fetchPurchases : fetchSales)
+
+  it("renders order rows with listing title, counterparty name, price, status badge, and date", async () => {
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination,
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     expect(await screen.findByText("Vintage Watch")).toBeInTheDocument()
-    expect(screen.getByText("Alice")).toBeInTheDocument()
+    expect(screen.getByText(counterpartyName)).toBeInTheDocument()
     expect(screen.getByText("$112.50")).toBeInTheDocument()
     expect(screen.getAllByText("Paid").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText(/6\/1\/2025/)).toBeInTheDocument()
   })
 
   it("shows status filter tabs: All, Pending, Paid, Shipped, Delivered, Completed, Cancelled", async () => {
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination,
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     expect(await screen.findByText("Vintage Watch")).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "All" })).toBeInTheDocument()
@@ -99,13 +119,13 @@ describe("PurchaseHistory", () => {
     mockPush.mockClear()
     const user = userEvent.setup()
 
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination,
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     await screen.findByText("Vintage Watch")
     await user.click(screen.getByRole("tab", { name: "Shipped" }))
@@ -115,17 +135,17 @@ describe("PurchaseHistory", () => {
     )
   })
 
-  it("clicking a purchase row navigates to /orders/[id]", async () => {
+  it("clicking an order row navigates to /orders/[id]", async () => {
     mockPush.mockClear()
     const user = userEvent.setup()
 
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination,
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     await user.click(await screen.findByText("Vintage Watch"))
 
@@ -133,25 +153,25 @@ describe("PurchaseHistory", () => {
   })
 
   it("shows pagination controls when totalPages > 1", async () => {
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination: { page: 1, limit: 10, total: 20, totalPages: 2 },
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     expect(await screen.findByText("Page 1 of 2")).toBeInTheDocument()
   })
 
   it("does not show pagination controls when totalPages is 1", async () => {
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     await screen.findByText("Vintage Watch")
     expect(screen.queryByText("Previous")).not.toBeInTheDocument()
@@ -161,13 +181,13 @@ describe("PurchaseHistory", () => {
     mockPush.mockClear()
     const user = userEvent.setup()
 
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
-      data: [makePurchase()],
+      data: [makeOrder()],
       pagination: { page: 1, limit: 10, total: 20, totalPages: 2 },
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     await screen.findByText("Vintage Watch")
     await user.click(screen.getByText("Next"))
@@ -178,35 +198,35 @@ describe("PurchaseHistory", () => {
   })
 
   it("shows loading skeleton while fetching", () => {
-    vi.mocked(fetchPurchases).mockReturnValueOnce(new Promise(() => {}))
+    vi.mocked(mockFetcher()).mockReturnValueOnce(new Promise(() => {}))
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
     expect(screen.getByRole("status")).toBeInTheDocument()
   })
 
-  it("shows empty state with CTA when no purchases", async () => {
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+  it("shows empty state with CTA when no orders", async () => {
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: true,
       data: [],
       pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
-    expect(await screen.findByText(/no purchases yet/i)).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /browse/i })).toBeInTheDocument()
+    expect(await screen.findByText(emptyPattern)).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: ctaPattern })).toBeInTheDocument()
   })
 
   it("shows error state with retry button when fetch fails", async () => {
-    vi.mocked(fetchPurchases).mockResolvedValueOnce({
+    vi.mocked(mockFetcher()).mockResolvedValueOnce({
       success: false,
-      error: "Failed to load purchases",
+      error: `Failed to load ${role === "buyer" ? "purchases" : "sales"}`,
     } as any)
 
-    render(<PurchaseHistory />, { wrapper })
+    render(<OrderList role={role} />, { wrapper })
 
-    expect(await screen.findByText("Failed to load purchases")).toBeInTheDocument()
+    expect(await screen.findByText(`Failed to load ${role === "buyer" ? "purchases" : "sales"}`)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument()
   })
 })

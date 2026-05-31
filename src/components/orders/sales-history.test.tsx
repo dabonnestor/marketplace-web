@@ -10,6 +10,7 @@ const { mockPush } = vi.hoisted(() => ({
 }))
 
 vi.mock("@/actions/orders", () => ({
+  fetchPurchases: vi.fn(),
   fetchSales: vi.fn(),
 }))
 
