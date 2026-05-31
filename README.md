@@ -37,13 +37,23 @@ The app runs at [http://localhost:3000](http://localhost:3000).
 
 ```
 src/
-  app/          App Router pages and layouts
-  actions/      Server actions (auth, listings, orders, uploads)
-  components/   Shared UI components
-  hooks/        Custom React hooks
-  lib/          API client, utilities, validations, types
-  stores/       Zustand stores
-  test/         Test setup
+  app/              App Router pages and layouts
+  actions/          Server actions (auth, listings, orders, uploads)
+  components/
+    layout/         Navbar, theme toggle
+    listings/       Listing cards, filters, forms, detail view
+    orders/         Order detail, order list, purchase/sales history
+    ui/             shadcn/ui primitives (button, card, dialog, etc.)
+  hooks/            Custom React hooks
+  lib/
+    api/            API client, token store adapter, shared types
+    validations/    Zod schemas (auth, listings)
+    display-utils   Shared formatters, badge color maps, NoImage placeholder
+    order-utils     Order status transitions, colors, labels
+    wrap-action     Server action error-boundary helper
+    utils           General utilities
+  stores/           Zustand stores
+  test/             Test setup
 ```
 
 ## Scripts
