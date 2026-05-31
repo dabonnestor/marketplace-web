@@ -1,35 +1,31 @@
 "use server"
 
 import { login as apiLogin, register as apiRegister, getMe, logout as apiLogout } from "@/lib/api/client"
+import { wrapAction } from "@/lib/wrap-action"
 
 export async function login(email: string, password: string) {
-  try {
-    const user = await apiLogin(email, password)
-    return { success: true, user }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Login failed",
-    }
-  }
+  return wrapAction(
+    async () => {
+      const user = await apiLogin(email, password)
+      return { success: true as const, user }
+    },
+    "Login failed"
+  )
 }
 
 export async function register(email: string, password: string, name: string) {
-  try {
-    const user = await apiRegister(email, password, name)
-    return { success: true, user }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Registration failed",
-    }
-  }
+  return wrapAction(
+    async () => {
+      const user = await apiRegister(email, password, name)
+      return { success: true as const, user }
+    },
+    "Registration failed"
+  )
 }
 
 export async function getCurrentUser() {
   try {
-    const user = await getMe()
-    return user
+    return await getMe()
   } catch {
     return null
   }

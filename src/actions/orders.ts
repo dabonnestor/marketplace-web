@@ -8,28 +8,26 @@ import {
   updateOrderStatus as apiUpdateOrderStatus,
 } from "@/lib/api/client"
 import type { OrderStatusTransition } from "@/lib/api/types"
+import { wrapAction } from "@/lib/wrap-action"
 
 export async function createOrder(listingId: string) {
-  try {
-    const order = await apiCreateOrder(listingId)
-    return { success: true, order }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to create order",
-    }
-  }
+  return wrapAction(
+    async () => {
+      const order = await apiCreateOrder(listingId)
+      return { success: true as const, order }
+    },
+    "Failed to create order"
+  )
 }
 
 export async function fetchOrder(id: string) {
-  try {
-    return { success: true, order: await getOrder(id) }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to fetch order",
-    }
-  }
+  return wrapAction(
+    async () => {
+      const order = await getOrder(id)
+      return { success: true as const, order }
+    },
+    "Failed to fetch order"
+  )
 }
 
 export async function fetchPurchases(params?: {
@@ -37,14 +35,13 @@ export async function fetchPurchases(params?: {
   limit?: number
   status?: string
 }) {
-  try {
-    return { success: true, ...(await getPurchases(params)) }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to fetch purchases",
-    }
-  }
+  return wrapAction(
+    async () => {
+      const result = await getPurchases(params)
+      return { success: true as const, ...result }
+    },
+    "Failed to fetch purchases"
+  )
 }
 
 export async function fetchSales(params?: {
@@ -52,27 +49,21 @@ export async function fetchSales(params?: {
   limit?: number
   status?: string
 }) {
-  try {
-    return { success: true, ...(await getSales(params)) }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to fetch sales",
-    }
-  }
+  return wrapAction(
+    async () => {
+      const result = await getSales(params)
+      return { success: true as const, ...result }
+    },
+    "Failed to fetch sales"
+  )
 }
 
-export async function updateOrderStatus(
-  id: string,
-  input: OrderStatusTransition
-) {
-  try {
-    const order = await apiUpdateOrderStatus(id, input)
-    return { success: true, order }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to update order status",
-    }
-  }
+export async function updateOrderStatus(id: string, input: OrderStatusTransition) {
+  return wrapAction(
+    async () => {
+      const order = await apiUpdateOrderStatus(id, input)
+      return { success: true as const, order }
+    },
+    "Failed to update order status"
+  )
 }
