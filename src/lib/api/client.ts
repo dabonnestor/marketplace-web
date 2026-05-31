@@ -1,4 +1,3 @@
-import { cookies } from "next/headers"
 import type {
   AuthResponse,
   RefreshResponse,
@@ -13,45 +12,21 @@ import type {
   OrderStatusTransition,
   ApiError,
 } from "./types"
+import { type TokenStore, CookieTokenStore } from "./token-store"
 
 const API_BASE = process.env.API_BASE_URL || "http://localhost:3000"
 
-async function getAccessToken(): Promise<string | null> {
-  const cookieStore = await cookies()
-  return cookieStore.get("accessToken")?.value ?? null
+let _client: ReturnType<typeof createApiClient> | null = null
+
+function getClient(): ReturnType<typeof createApiClient> {
+  if (!_client) _client = createApiClient(new CookieTokenStore())
+  return _client
 }
 
-async function getRefreshToken(): Promise<string | null> {
-  const cookieStore = await cookies()
-  return cookieStore.get("refreshToken")?.value ?? null
-}
-
-async function setTokens(accessToken: string, refreshToken: string) {
-  const cookieStore = await cookies()
-  cookieStore.set("accessToken", accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 15 * 60, // 15 minutes
-  })
-  cookieStore.set("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-  })
-}
-
-async function clearTokens() {
-  const cookieStore = await cookies()
-  cookieStore.delete("accessToken")
-  cookieStore.delete("refreshToken")
-}
-
-async function refreshTokens(): Promise<string | null> {
-  const refreshToken = await getRefreshToken()
+async function refreshTokens(
+  tokenStore: TokenStore
+): Promise<string | null> {
+  const refreshToken = await tokenStore.getRefreshToken()
   if (!refreshToken) return null
 
   const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
@@ -61,20 +36,21 @@ async function refreshTokens(): Promise<string | null> {
   })
 
   if (!res.ok) {
-    await clearTokens()
+    await tokenStore.clearTokens()
     return null
   }
 
   const data: RefreshResponse = await res.json()
-  await setTokens(data.accessToken, data.refreshToken)
+  await tokenStore.setTokens(data.accessToken, data.refreshToken)
   return data.accessToken
 }
 
 async function apiFetch<T>(
   path: string,
+  tokenStore: TokenStore,
   options: RequestInit = {}
 ): Promise<T> {
-  let token = await getAccessToken()
+  let token = await tokenStore.getAccessToken()
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -89,9 +65,8 @@ async function apiFetch<T>(
     headers,
   })
 
-  // If 401, try refreshing the token
   if (res.status === 401 && token) {
-    token = await refreshTokens()
+    token = await refreshTokens(tokenStore)
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
       res = await fetch(`${API_BASE}${path}`, {
@@ -127,33 +102,179 @@ export class ApiRequestError extends Error {
   }
 }
 
+export function createApiClient(tokenStore: TokenStore) {
+  return {
+    // Auth
+    async login(email: string, password: string) {
+      const data = await apiFetch<AuthResponse>(
+        "/api/v1/auth/login",
+        tokenStore,
+        { method: "POST", body: JSON.stringify({ email, password }) }
+      )
+      await tokenStore.setTokens(data.accessToken, data.refreshToken)
+      return data.user
+    },
+
+    async register(email: string, password: string, name: string) {
+      const data = await apiFetch<AuthResponse>(
+        "/api/v1/auth/register",
+        tokenStore,
+        { method: "POST", body: JSON.stringify({ email, password, name }) }
+      )
+      await tokenStore.setTokens(data.accessToken, data.refreshToken)
+      return data.user
+    },
+
+    async getMe(): Promise<User | null> {
+      const token = await tokenStore.getAccessToken()
+      if (!token) return null
+      return apiFetch<User>("/api/v1/auth/me", tokenStore)
+    },
+
+    async logout() {
+      await tokenStore.clearTokens()
+    },
+
+    // Listings
+    async getListings(params?: {
+      page?: number
+      limit?: number
+      category?: string
+      minPrice?: number
+      maxPrice?: number
+      search?: string
+    }) {
+      const searchParams = new URLSearchParams()
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== undefined && value !== "") {
+            searchParams.set(key, String(value))
+          }
+        }
+      }
+      const query = searchParams.toString()
+      return apiFetch<PaginatedResponse<Listing>>(
+        `/api/v1/listings${query ? `?${query}` : ""}`,
+        tokenStore
+      )
+    },
+
+    async getListing(id: string) {
+      return apiFetch<Listing>(`/api/v1/listings/${id}`, tokenStore)
+    },
+
+    async createListing(input: CreateListingInput) {
+      return apiFetch<Listing>("/api/v1/listings", tokenStore, {
+        method: "POST",
+        body: JSON.stringify(input),
+      })
+    },
+
+    async updateListing(id: string, input: UpdateListingInput) {
+      return apiFetch<Listing>(`/api/v1/listings/${id}`, tokenStore, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      })
+    },
+
+    async deleteListing(id: string) {
+      return apiFetch<void>(`/api/v1/listings/${id}`, tokenStore, {
+        method: "DELETE",
+      })
+    },
+
+    async getMyListings(params?: { page?: number; limit?: number }) {
+      const searchParams = new URLSearchParams()
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== undefined) {
+            searchParams.set(key, String(value))
+          }
+        }
+      }
+      const query = searchParams.toString()
+      return apiFetch<PaginatedResponse<Listing>>(
+        `/api/v1/listings/mine${query ? `?${query}` : ""}`,
+        tokenStore
+      )
+    },
+
+    // Orders
+    async createOrder(listingId: string) {
+      return apiFetch<Order>("/api/v1/orders", tokenStore, {
+        method: "POST",
+        body: JSON.stringify({ listingId }),
+      })
+    },
+
+    async getOrder(id: string) {
+      return apiFetch<Order>(`/api/v1/orders/${id}`, tokenStore)
+    },
+
+    async getPurchases(params?: {
+      page?: number
+      limit?: number
+      status?: string
+    }) {
+      const searchParams = new URLSearchParams()
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== undefined) {
+            searchParams.set(key, String(value))
+          }
+        }
+      }
+      const query = searchParams.toString()
+      return apiFetch<PaginatedResponse<PurchaseOrder>>(
+        `/api/v1/orders/buyer/purchases${query ? `?${query}` : ""}`,
+        tokenStore
+      )
+    },
+
+    async getSales(params?: {
+      page?: number
+      limit?: number
+      status?: string
+    }) {
+      const searchParams = new URLSearchParams()
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== undefined) {
+            searchParams.set(key, String(value))
+          }
+        }
+      }
+      const query = searchParams.toString()
+      return apiFetch<PaginatedResponse<SaleOrder>>(
+        `/api/v1/orders/seller/sales${query ? `?${query}` : ""}`,
+        tokenStore
+      )
+    },
+
+    async updateOrderStatus(id: string, input: OrderStatusTransition) {
+      return apiFetch<Order>(`/api/v1/orders/${id}/status`, tokenStore, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      })
+    },
+  }
+}
+
 // Auth
 export async function login(email: string, password: string) {
-  const data = await apiFetch<AuthResponse>("/api/v1/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  })
-  await setTokens(data.accessToken, data.refreshToken)
-  return data.user
+  return getClient().login(email, password)
 }
 
 export async function register(email: string, password: string, name: string) {
-  const data = await apiFetch<AuthResponse>("/api/v1/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ email, password, name }),
-  })
-  await setTokens(data.accessToken, data.refreshToken)
-  return data.user
+  return getClient().register(email, password, name)
 }
 
-export async function getMe(): Promise<User | null> {
-  const token = await getAccessToken()
-  if (!token) return null
-  return apiFetch<User>("/api/v1/auth/me")
+export async function getMe() {
+  return getClient().getMe()
 }
 
 export async function logout() {
-  await clearTokens()
+  return getClient().logout()
 }
 
 // Listings
@@ -165,70 +286,36 @@ export async function getListings(params?: {
   maxPrice?: number
   search?: string
 }) {
-  const searchParams = new URLSearchParams()
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== "") {
-        searchParams.set(key, String(value))
-      }
-    }
-  }
-  const query = searchParams.toString()
-  return apiFetch<PaginatedResponse<Listing>>(
-    `/api/v1/listings${query ? `?${query}` : ""}`
-  )
+  return getClient().getListings(params)
 }
 
 export async function getListing(id: string) {
-  return apiFetch<Listing>(`/api/v1/listings/${id}`)
+  return getClient().getListing(id)
 }
 
 export async function createListing(input: CreateListingInput) {
-  return apiFetch<Listing>("/api/v1/listings", {
-    method: "POST",
-    body: JSON.stringify(input),
-  })
+  return getClient().createListing(input)
 }
 
 export async function updateListing(id: string, input: UpdateListingInput) {
-  return apiFetch<Listing>(`/api/v1/listings/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(input),
-  })
+  return getClient().updateListing(id, input)
 }
 
 export async function deleteListing(id: string) {
-  return apiFetch<void>(`/api/v1/listings/${id}`, { method: "DELETE" })
+  return getClient().deleteListing(id)
 }
 
-export async function getMyListings(params?: {
-  page?: number
-  limit?: number
-}) {
-  const searchParams = new URLSearchParams()
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) {
-        searchParams.set(key, String(value))
-      }
-    }
-  }
-  const query = searchParams.toString()
-  return apiFetch<PaginatedResponse<Listing>>(
-    `/api/v1/listings/mine${query ? `?${query}` : ""}`
-  )
+export async function getMyListings(params?: { page?: number; limit?: number }) {
+  return getClient().getMyListings(params)
 }
 
 // Orders
 export async function createOrder(listingId: string) {
-  return apiFetch<Order>("/api/v1/orders", {
-    method: "POST",
-    body: JSON.stringify({ listingId }),
-  })
+  return getClient().createOrder(listingId)
 }
 
 export async function getOrder(id: string) {
-  return apiFetch<Order>(`/api/v1/orders/${id}`)
+  return getClient().getOrder(id)
 }
 
 export async function getPurchases(params?: {
@@ -236,18 +323,7 @@ export async function getPurchases(params?: {
   limit?: number
   status?: string
 }) {
-  const searchParams = new URLSearchParams()
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) {
-        searchParams.set(key, String(value))
-      }
-    }
-  }
-  const query = searchParams.toString()
-  return apiFetch<PaginatedResponse<PurchaseOrder>>(
-    `/api/v1/orders/buyer/purchases${query ? `?${query}` : ""}`
-  )
+  return getClient().getPurchases(params)
 }
 
 export async function getSales(params?: {
@@ -255,26 +331,12 @@ export async function getSales(params?: {
   limit?: number
   status?: string
 }) {
-  const searchParams = new URLSearchParams()
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) {
-        searchParams.set(key, String(value))
-      }
-    }
-  }
-  const query = searchParams.toString()
-  return apiFetch<PaginatedResponse<SaleOrder>>(
-    `/api/v1/orders/seller/sales${query ? `?${query}` : ""}`
-  )
+  return getClient().getSales(params)
 }
 
 export async function updateOrderStatus(
   id: string,
   input: OrderStatusTransition
 ) {
-  return apiFetch<Order>(`/api/v1/orders/${id}/status`, {
-    method: "PATCH",
-    body: JSON.stringify(input),
-  })
+  return getClient().updateOrderStatus(id, input)
 }
