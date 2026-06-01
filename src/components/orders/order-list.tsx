@@ -2,6 +2,7 @@
 
 import { useCallback } from "react"
 import { useQuery } from "@tanstack/react-query"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPurchases, fetchSales } from "@/actions/orders"
 import type { PurchaseOrder, SaleOrder, Pagination } from "@/lib/api/types"
@@ -186,12 +187,12 @@ export function OrderList({ role }: OrderListProps) {
           <p className="text-muted-foreground mb-4">
             {cfg.emptyMessage}
           </p>
-          <a
+          <Link
             href={cfg.emptyCtaHref}
             className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
           >
             {cfg.emptyCtaLabel}
-          </a>
+          </Link>
         </div>
       </div>
     )
