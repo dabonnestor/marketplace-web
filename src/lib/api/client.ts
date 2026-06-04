@@ -10,6 +10,8 @@ import type {
   CreateListingInput,
   UpdateListingInput,
   OrderStatusTransition,
+  OnboardSellerResponse,
+  OnboardStatusResponse,
   ApiError,
 } from "./types"
 import { type TokenStore, CookieTokenStore } from "./token-store"
@@ -257,6 +259,22 @@ export function createApiClient(tokenStore: TokenStore) {
         body: JSON.stringify(input),
       })
     },
+
+    // Seller / Stripe Connect
+    async onboardSeller() {
+      return apiFetch<OnboardSellerResponse>(
+        "/api/v1/seller/onboard",
+        tokenStore,
+        { method: "POST" }
+      )
+    },
+
+    async getOnboardStatus() {
+      return apiFetch<OnboardStatusResponse>(
+        "/api/v1/seller/onboard/status",
+        tokenStore
+      )
+    },
   }
 }
 
@@ -339,4 +357,13 @@ export async function updateOrderStatus(
   input: OrderStatusTransition
 ) {
   return getClient().updateOrderStatus(id, input)
+}
+
+// Seller / Stripe Connect
+export async function onboardSeller() {
+  return getClient().onboardSeller()
+}
+
+export async function getOnboardStatus() {
+  return getClient().getOnboardStatus()
 }

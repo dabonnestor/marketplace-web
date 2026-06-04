@@ -110,3 +110,14 @@ export interface SaleOrder extends Order {
 export interface OrderStatusTransition {
   status: Exclude<OrderStatus, "pending">
 }
+
+// Stripe Connect
+export interface OnboardSellerResponse {
+  url: string
+}
+
+export interface OnboardStatusResponse {
+  onboarded: boolean
+  chargesEnabled: boolean
+  detailsSubmitted: boolean
+}
