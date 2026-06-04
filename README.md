@@ -31,7 +31,7 @@ The app runs at [http://localhost:3000](http://localhost:3000).
 
 | Variable | Default | Description |
 |---|---|---|
-| `API_BASE_URL` | `http://localhost:3000` | Marketplace API backend URL |
+| `API_BASE_URL` | `http://localhost:8080` | Marketplace API backend URL |
 
 ## Project Structure
 

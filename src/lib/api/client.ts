@@ -16,7 +16,7 @@ import type {
 } from "./types"
 import { type TokenStore, CookieTokenStore } from "./token-store"
 
-const API_BASE = process.env.API_BASE_URL || "http://localhost:3000"
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8080"
 
 let _client: ReturnType<typeof createApiClient> | null = null
 
