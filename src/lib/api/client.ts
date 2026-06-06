@@ -260,6 +260,12 @@ export function createApiClient(tokenStore: TokenStore) {
       })
     },
 
+    async payOrder(orderId: string) {
+      return apiFetch<Order>(`/api/v1/orders/${orderId}/pay`, tokenStore, {
+        method: "POST",
+      })
+    },
+
     // Seller / Stripe Connect
     async onboardSeller() {
       return apiFetch<OnboardSellerResponse>(
@@ -357,6 +363,10 @@ export async function updateOrderStatus(
   input: OrderStatusTransition
 ) {
   return getClient().updateOrderStatus(id, input)
+}
+
+export async function payOrder(orderId: string) {
+  return getClient().payOrder(orderId)
 }
 
 // Seller / Stripe Connect

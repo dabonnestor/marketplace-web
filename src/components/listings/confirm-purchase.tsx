@@ -1,31 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { createOrder } from "@/actions/orders"
+import { createOrder, fetchOrder } from "@/actions/orders"
+import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import type { Listing } from "@/lib/api/types"
+import type { Listing, Order } from "@/lib/api/types"
 import { formatCurrency } from "@/lib/display-utils"
-
-function calcPlatformFee(price: string): string {
-  return (parseFloat(price) * 0.05).toFixed(2)
-}
-
-function calcTotal(
-  price: string,
-  shipping: string,
-  platformFee: string,
-): string {
-  return (
-    parseFloat(price) +
-    parseFloat(shipping) +
-    parseFloat(platformFee)
-  ).toFixed(2)
-}
 
 function PriceRow({
   label,
@@ -54,12 +39,34 @@ export function ConfirmPurchase({
   currentUserId: string | null
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const orderIdParam = searchParams.get("orderId")
+
+  const [order, setOrder] = useState<Order | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     if (currentUserId === null && listing.status !== "sold") {
       router.push(`/login?redirect=/listings/${listing.id}/confirm`)
     }
   }, [currentUserId, listing.id, listing.status, router])
+
+  useEffect(() => {
+    if (!orderIdParam) return
+
+    fetchOrder(orderIdParam).then((result) => {
+      if (result.success && result.order) {
+        if (result.order.status === "pending") {
+          setOrder(result.order)
+        } else {
+          router.push(`/orders/${result.order.id}`)
+        }
+      } else {
+        toast.error(result.error || "Failed to fetch order")
+        router.replace(window.location.pathname)
+      }
+    })
+  }, [orderIdParam, router])
 
   if (listing.status === "sold") {
     return (
@@ -77,24 +84,71 @@ export function ConfirmPurchase({
     )
   }
 
-  const [isPending, setIsPending] = useState(false)
-
-  async function handleConfirm() {
-    setIsPending(true)
+  async function handleCreateOrder() {
+    setIsCreating(true)
     const result = await createOrder(listing.id)
-    setIsPending(false)
+    setIsCreating(false)
 
     if (result.success && result.order) {
-      toast.success("Order placed successfully")
-      router.push(`/orders/${result.order.id}`)
+      setOrder(result.order)
+      router.replace(`?orderId=${result.order.id}`)
     } else {
       toast.error(result.error || "Failed to create order")
     }
   }
 
-  const platformFee = calcPlatformFee(listing.price)
-  const total = calcTotal(listing.price, listing.shippingCost, platformFee)
+  // Step 2: server-computed price breakdown + StripePaymentForm
+  if (order) {
+    return (
+      <div className="max-w-lg mx-auto space-y-6">
+        <Link
+          href={`/listings/${listing.id}`}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          &larr; Back to listing
+        </Link>
 
+        <div>
+          <h1 className="mt-4 text-2xl font-bold">Complete your payment</h1>
+          <p className="text-muted-foreground mt-1">
+            Review the final price and enter your card details.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{listing.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <PriceRow
+              label="Subtotal"
+              amount={formatCurrency(order.subtotal)}
+            />
+            <PriceRow
+              label="Shipping"
+              amount={formatCurrency(order.shippingCost)}
+            />
+            <PriceRow
+              label="Platform fee"
+              amount={formatCurrency(order.platformFee)}
+            />
+            <Separator />
+            <PriceRow label="Total" amount={formatCurrency(order.total)} bold />
+          </CardContent>
+        </Card>
+
+        {order.clientSecret && (
+          <StripePaymentForm
+            clientSecret={order.clientSecret}
+            orderId={order.id}
+            onSuccess={() => router.push(`/orders/${order.id}`)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Step 1: listing summary + proceed button
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <Link
@@ -107,7 +161,7 @@ export function ConfirmPurchase({
       <div>
         <h1 className="mt-4 text-2xl font-bold">Confirm your purchase</h1>
         <p className="text-muted-foreground mt-1">
-          Review the details before placing your order.
+          Review the details before proceeding to payment.
         </p>
       </div>
 
@@ -116,22 +170,26 @@ export function ConfirmPurchase({
           <CardTitle>{listing.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <PriceRow label="Subtotal" amount={formatCurrency(listing.price)} />
+          <PriceRow
+            label="Price"
+            amount={formatCurrency(listing.price)}
+          />
           <PriceRow
             label="Shipping"
             amount={formatCurrency(listing.shippingCost)}
           />
-          <PriceRow
-            label="Platform fee (5%)"
-            amount={formatCurrency(platformFee)}
-          />
-          <Separator />
-          <PriceRow label="Total" amount={formatCurrency(total)} bold />
+          <p className="text-sm text-muted-foreground">
+            10% platform fee will be added at checkout.
+          </p>
         </CardContent>
       </Card>
 
-      <Button onClick={handleConfirm} disabled={isPending} className="w-full">
-        {isPending ? "Confirming..." : "Confirm Purchase"}
+      <Button
+        onClick={handleCreateOrder}
+        disabled={isCreating}
+        className="w-full"
+      >
+        {isCreating ? "Creating order..." : "Proceed to Payment"}
       </Button>
     </div>
   )

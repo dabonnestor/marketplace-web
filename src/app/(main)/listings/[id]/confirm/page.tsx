@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getListing, getMe, ApiRequestError } from "@/lib/api/client"
@@ -41,5 +42,9 @@ export default async function ConfirmPurchasePage({ params }: Props) {
     // Not authenticated — that's fine
   }
 
-  return <ConfirmPurchase listing={listing} currentUserId={currentUserId} />
+  return (
+    <Suspense>
+      <ConfirmPurchase listing={listing} currentUserId={currentUserId} />
+    </Suspense>
+  )
 }

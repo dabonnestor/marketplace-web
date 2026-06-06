@@ -6,6 +6,7 @@ import {
   getPurchases,
   getSales,
   updateOrderStatus as apiUpdateOrderStatus,
+  payOrder as apiPayOrder,
 } from "@/lib/api/client"
 import type { OrderStatusTransition } from "@/lib/api/types"
 import { wrapAction } from "@/lib/wrap-action"
@@ -65,5 +66,15 @@ export async function updateOrderStatus(id: string, input: OrderStatusTransition
       return { success: true as const, order }
     },
     "Failed to update order status"
+  )
+}
+
+export async function payOrder(orderId: string) {
+  return wrapAction(
+    async () => {
+      const order = await apiPayOrder(orderId)
+      return { success: true as const, order }
+    },
+    "Failed to process payment"
   )
 }
