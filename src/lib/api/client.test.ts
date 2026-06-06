@@ -3,7 +3,7 @@ import { createApiClient, ApiRequestError } from "./client"
 import { MemoryTokenStore } from "./token-store"
 import type { TokenStore } from "./token-store"
 
-const API_BASE = "http://localhost:3000"
+const API_BASE = "http://localhost:8080"
 
 function mockFetch(responseOverrides: Record<string, Response>) {
   return vi.spyOn(globalThis, "fetch").mockImplementation(

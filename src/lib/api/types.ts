@@ -34,6 +34,11 @@ export interface Order {
   platformFee: string
   total: string
   sellerPayout: string
+  clientSecret?: string
+  stripePaymentIntentId?: string
+  stripeTransferId?: string
+  stripeRefundId?: string
+  preDisputeStatus?: OrderStatus
   paidAt: string | null
   shippedAt: string | null
   deliveredAt: string | null
