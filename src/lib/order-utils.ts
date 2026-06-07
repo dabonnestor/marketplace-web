@@ -3,7 +3,7 @@ import type { OrderStatus } from "./api/types"
 type Role = "buyer" | "seller" | "none"
 
 const TRANSITIONS: Record<OrderStatus, Record<Role, OrderStatus[]>> = {
-  pending:   { buyer: ["paid"], seller: [], none: [] },
+  pending:   { buyer: [], seller: [], none: [] },
   paid:      { buyer: [], seller: ["shipped"], none: [] },
   shipped:   { buyer: [], seller: ["delivered"], none: [] },
   delivered: { buyer: ["completed"], seller: [], none: [] },

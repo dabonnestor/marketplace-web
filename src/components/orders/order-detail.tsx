@@ -4,7 +4,12 @@ import { useEffect, useState, Fragment } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { updateOrderStatus, cancelOrder, refundOrder } from "@/actions/orders"
+import {
+  updateOrderStatus,
+  cancelOrder,
+  completeOrder,
+  refundOrder,
+} from "@/actions/orders"
 import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
 import {
   getValidTransitions,
@@ -156,14 +161,12 @@ export function OrderDetail({
 
   const validTransitions = getValidTransitions(order.status, role)
 
-  const canCancel =
-    role === "buyer" && (order.status === "pending" || order.status === "paid")
+  const canCancel = role === "buyer" && order.status === "pending"
   const canRefund =
     role === "buyer" &&
     (order.status === "paid" ||
       order.status === "shipped" ||
       order.status === "delivered")
-
   const canCompletePayment =
     role === "buyer" && order.status === "pending" && !!order.clientSecret
 
@@ -185,9 +188,16 @@ export function OrderDetail({
 
   async function handleAction(status: OrderStatus) {
     setIsPending(true)
-    const result = await updateOrderStatus(order.id, {
-      status,
-    } as OrderStatusTransition)
+
+    let result: { success: boolean; error?: string }
+    if (status === "completed") {
+      result = await completeOrder(order.id)
+    } else {
+      result = await updateOrderStatus(order.id, {
+        status,
+      } as OrderStatusTransition)
+    }
+
     setIsPending(false)
     setTargetStatus(null)
 
@@ -241,7 +251,9 @@ export function OrderDetail({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold truncate">{listing.title}</h1>
-          <p className="text-sm text-muted-foreground">Order #{order.id}</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Order #{order.id}
+          </p>
         </div>
         <div
           className={cn(
@@ -276,7 +288,7 @@ export function OrderDetail({
             amount={formatCurrency(order.shippingCost)}
           />
           <PriceRow
-            label="Platform fee (5%)"
+            label="Platform fee (10%)"
             amount={formatCurrency(order.platformFee)}
           />
           <Separator />
@@ -300,10 +312,7 @@ export function OrderDetail({
 
       {canCompletePayment && !showPaymentForm && (
         <div className="space-y-2">
-          <Button
-            onClick={() => setShowPaymentForm(true)}
-            className="w-full"
-          >
+          <Button onClick={() => setShowPaymentForm(true)} className="w-full">
             Complete Payment
           </Button>
         </div>
@@ -388,7 +397,10 @@ export function OrderDetail({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelConfirm(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleCancel} disabled={cancelPending}>
@@ -412,7 +424,10 @@ export function OrderDetail({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRefundConfirm(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowRefundConfirm(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleRefund} disabled={refundPending}>

@@ -3,8 +3,8 @@ import { getValidTransitions, statusColor, statusLabel } from "./order-utils"
 import type { OrderStatus } from "./api/types"
 
 describe("getValidTransitions", () => {
-  it("buyer of pending order can mark as paid only", () => {
-    expect(getValidTransitions("pending", "buyer")).toEqual(["paid"])
+  it("buyer of pending order has no actions", () => {
+    expect(getValidTransitions("pending", "buyer")).toEqual([])
   })
 
   it("seller of pending order has no actions", () => {
