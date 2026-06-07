@@ -4,7 +4,8 @@ import { useEffect, useState, Fragment } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { updateOrderStatus } from "@/actions/orders"
+import { updateOrderStatus, cancelOrder, refundOrder } from "@/actions/orders"
+import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
 import {
   getValidTransitions,
   statusColor,
@@ -134,6 +135,11 @@ export function OrderDetail({
   const router = useRouter()
   const [targetStatus, setTargetStatus] = useState<OrderStatus | null>(null)
   const [isPending, setIsPending] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancelPending, setCancelPending] = useState(false)
+  const [showRefundConfirm, setShowRefundConfirm] = useState(false)
+  const [refundPending, setRefundPending] = useState(false)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
 
   useEffect(() => {
     if (currentUserId === null) {
@@ -150,6 +156,33 @@ export function OrderDetail({
 
   const validTransitions = getValidTransitions(order.status, role)
 
+  const canCancel =
+    role === "buyer" && (order.status === "pending" || order.status === "paid")
+  const canRefund =
+    role === "buyer" &&
+    (order.status === "paid" ||
+      order.status === "shipped" ||
+      order.status === "delivered")
+
+  const canCompletePayment =
+    role === "buyer" && order.status === "pending" && !!order.clientSecret
+
+  const terminalStatuses: OrderStatus[] = [
+    "completed",
+    "cancelled",
+    "expired",
+    "refunded",
+  ]
+  const isTerminal = terminalStatuses.includes(order.status)
+
+  useEffect(() => {
+    if (isTerminal) return
+    const interval = setInterval(() => {
+      router.refresh()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [isTerminal, router])
+
   async function handleAction(status: OrderStatus) {
     setIsPending(true)
     const result = await updateOrderStatus(order.id, {
@@ -163,6 +196,34 @@ export function OrderDetail({
       router.refresh()
     } else {
       toast.error(result.error || "Failed to update order status")
+    }
+  }
+
+  async function handleCancel() {
+    setCancelPending(true)
+    const result = await cancelOrder(order.id)
+    setCancelPending(false)
+    setShowCancelConfirm(false)
+
+    if (result.success) {
+      toast.success("Order cancelled")
+      router.refresh()
+    } else {
+      toast.error(result.error || "Failed to cancel order")
+    }
+  }
+
+  async function handleRefund() {
+    setRefundPending(true)
+    const result = await refundOrder(order.id)
+    setRefundPending(false)
+    setShowRefundConfirm(false)
+
+    if (result.success) {
+      toast.success("Order refunded")
+      router.refresh()
+    } else {
+      toast.error(result.error || "Failed to refund order")
     }
   }
 
@@ -237,6 +298,49 @@ export function OrderDetail({
         </div>
       )}
 
+      {canCompletePayment && !showPaymentForm && (
+        <div className="space-y-2">
+          <Button
+            onClick={() => setShowPaymentForm(true)}
+            className="w-full"
+          >
+            Complete Payment
+          </Button>
+        </div>
+      )}
+
+      {canCompletePayment && showPaymentForm && (
+        <StripePaymentForm
+          clientSecret={order.clientSecret!}
+          orderId={order.id}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+
+      {canCancel && (
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowCancelConfirm(true)}
+            className="w-full"
+          >
+            Cancel Order
+          </Button>
+        </div>
+      )}
+
+      {canRefund && (
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowRefundConfirm(true)}
+            className="w-full"
+          >
+            Refund Order
+          </Button>
+        </div>
+      )}
+
       <Dialog
         open={!!targetStatus}
         onOpenChange={(open) => {
@@ -249,6 +353,11 @@ export function OrderDetail({
             <DialogDescription>
               Are you sure you want to mark this order as{" "}
               {targetStatus?.toLowerCase()}?
+              {targetStatus === "completed" && (
+                <span className="block mt-1 font-medium">
+                  This transfers payment to the seller
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -260,6 +369,54 @@ export function OrderDetail({
               disabled={isPending}
             >
               {isPending ? "Confirming..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showCancelConfirm}
+        onOpenChange={(open) => {
+          if (!open) setShowCancelConfirm(false)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Cancellation</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this order?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCancel} disabled={cancelPending}>
+              {cancelPending ? "Cancelling..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showRefundConfirm}
+        onOpenChange={(open) => {
+          if (!open) setShowRefundConfirm(false)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Refund</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to refund this order?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRefundConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRefund} disabled={refundPending}>
+              {refundPending ? "Refunding..." : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>

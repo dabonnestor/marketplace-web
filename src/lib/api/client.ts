@@ -266,6 +266,18 @@ export function createApiClient(tokenStore: TokenStore) {
       })
     },
 
+    async cancelOrder(orderId: string) {
+      return apiFetch<Order>(`/api/v1/orders/${orderId}/cancel`, tokenStore, {
+        method: "POST",
+      })
+    },
+
+    async refundOrder(orderId: string) {
+      return apiFetch<Order>(`/api/v1/orders/${orderId}/refund`, tokenStore, {
+        method: "POST",
+      })
+    },
+
     // Seller / Stripe Connect
     async onboardSeller() {
       return apiFetch<OnboardSellerResponse>(
@@ -367,6 +379,14 @@ export async function updateOrderStatus(
 
 export async function payOrder(orderId: string) {
   return getClient().payOrder(orderId)
+}
+
+export async function cancelOrder(orderId: string) {
+  return getClient().cancelOrder(orderId)
+}
+
+export async function refundOrder(orderId: string) {
+  return getClient().refundOrder(orderId)
 }
 
 // Seller / Stripe Connect

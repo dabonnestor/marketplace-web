@@ -55,6 +55,8 @@ export type OrderStatus =
   | "completed"
   | "disputed"
   | "cancelled"
+  | "expired"
+  | "refunded"
 
 export interface Pagination {
   page: number

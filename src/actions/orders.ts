@@ -7,6 +7,8 @@ import {
   getSales,
   updateOrderStatus as apiUpdateOrderStatus,
   payOrder as apiPayOrder,
+  cancelOrder as apiCancelOrder,
+  refundOrder as apiRefundOrder,
 } from "@/lib/api/client"
 import type { OrderStatusTransition } from "@/lib/api/types"
 import { wrapAction } from "@/lib/wrap-action"
@@ -76,5 +78,25 @@ export async function payOrder(orderId: string) {
       return { success: true as const, order }
     },
     "Failed to process payment"
+  )
+}
+
+export async function cancelOrder(orderId: string) {
+  return wrapAction(
+    async () => {
+      const order = await apiCancelOrder(orderId)
+      return { success: true as const, order }
+    },
+    "Failed to cancel order"
+  )
+}
+
+export async function refundOrder(orderId: string) {
+  return wrapAction(
+    async () => {
+      const order = await apiRefundOrder(orderId)
+      return { success: true as const, order }
+    },
+    "Failed to refund order"
   )
 }

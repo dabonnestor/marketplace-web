@@ -327,4 +327,18 @@ describe("endpoint contracts", () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE}/api/v1/orders/o1/status`)
     expect(fetchMock.mock.calls[0][1]?.method).toBe("PATCH")
   })
+
+  it("cancelOrder hits /api/v1/orders/:id/cancel with POST", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ id: "o1" }))
+    await client.cancelOrder("o1")
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE}/api/v1/orders/o1/cancel`)
+    expect(fetchMock.mock.calls[0][1]?.method).toBe("POST")
+  })
+
+  it("refundOrder hits /api/v1/orders/:id/refund with POST", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ id: "o1" }))
+    await client.refundOrder("o1")
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE}/api/v1/orders/o1/refund`)
+    expect(fetchMock.mock.calls[0][1]?.method).toBe("POST")
+  })
 })

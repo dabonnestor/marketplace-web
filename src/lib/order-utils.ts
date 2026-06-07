@@ -10,6 +10,8 @@ const TRANSITIONS: Record<OrderStatus, Record<Role, OrderStatus[]>> = {
   completed: { buyer: [], seller: [], none: [] },
   disputed:  { buyer: [], seller: [], none: [] },
   cancelled: { buyer: [], seller: [], none: [] },
+  expired:   { buyer: [], seller: [], none: [] },
+  refunded:  { buyer: [], seller: [], none: [] },
 }
 
 export function getValidTransitions(
@@ -27,6 +29,8 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   completed: "green",
   disputed: "red",
   cancelled: "red",
+  expired: "red",
+  refunded: "red",
 }
 
 export function statusColor(status: OrderStatus): string {
