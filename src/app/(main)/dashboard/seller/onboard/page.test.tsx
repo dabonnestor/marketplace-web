@@ -39,7 +39,7 @@ describe("SellerOnboardPage", () => {
       success: true,
       onboarded: true,
       chargesEnabled: true,
-      detailsSubmitted: true,
+      payoutsEnabled: true,
     } as any)
 
     render(<SellerOnboardPage />, { wrapper })
@@ -56,7 +56,7 @@ describe("SellerOnboardPage", () => {
       success: true,
       onboarded: false,
       chargesEnabled: false,
-      detailsSubmitted: false,
+      payoutsEnabled: false,
     } as any)
 
     render(<SellerOnboardPage />, { wrapper })
@@ -75,7 +75,7 @@ describe("SellerOnboardPage", () => {
       success: true,
       onboarded: false,
       chargesEnabled: false,
-      detailsSubmitted: false,
+      payoutsEnabled: false,
     } as any)
 
     vi.mocked(onboardSeller).mockResolvedValueOnce({

@@ -28,7 +28,12 @@ export default function SellerOnboardPage() {
 
   if (!data || !data.success) return null
 
-  if (data.onboarded && !errorParam) {
+  if (
+    data.onboarded &&
+    data.chargesEnabled &&
+    data.payoutsEnabled &&
+    !errorParam
+  ) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="text-4xl mb-4 text-green-600">&#10003;</div>

@@ -17,12 +17,17 @@ export function OnboardingBanner() {
   if (isLoading) {
     return (
       <div role="status" aria-label="Checking onboarding status">
-        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="h-16 mb-4 w-full rounded-xl" />
       </div>
     )
   }
 
-  if (!data || !data.success || data.onboarded) return null
+  if (
+    !data ||
+    !data.success ||
+    (data.onboarded && data.chargesEnabled && data.payoutsEnabled)
+  )
+    return null
 
   async function handleClick() {
     setLoading(true)

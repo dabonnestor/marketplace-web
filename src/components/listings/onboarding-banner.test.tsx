@@ -32,7 +32,7 @@ describe("OnboardingBanner", () => {
       success: true,
       onboarded: false,
       chargesEnabled: false,
-      detailsSubmitted: false,
+      payoutsEnabled: false,
     } as any)
 
     render(<OnboardingBanner />, { wrapper })
@@ -47,7 +47,7 @@ describe("OnboardingBanner", () => {
       success: true,
       onboarded: true,
       chargesEnabled: true,
-      detailsSubmitted: true,
+      payoutsEnabled: true,
     } as any)
 
     render(<OnboardingBanner />, { wrapper })
@@ -74,7 +74,7 @@ describe("OnboardingBanner", () => {
       success: true,
       onboarded: false,
       chargesEnabled: false,
-      detailsSubmitted: false,
+      payoutsEnabled: false,
     } as any)
 
     vi.mocked(onboardSeller).mockResolvedValueOnce({

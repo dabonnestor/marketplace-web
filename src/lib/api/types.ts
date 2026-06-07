@@ -124,5 +124,5 @@ export interface OnboardSellerResponse {
 export interface OnboardStatusResponse {
   onboarded: boolean
   chargesEnabled: boolean
-  detailsSubmitted: boolean
+  payoutsEnabled: boolean
 }
