@@ -45,13 +45,23 @@ describe("getValidTransitions", () => {
     expect(getValidTransitions("cancelled", "seller")).toEqual([])
   })
 
+  it("no actions for terminal status expired", () => {
+    expect(getValidTransitions("expired", "buyer")).toEqual([])
+    expect(getValidTransitions("expired", "seller")).toEqual([])
+  })
+
+  it("no actions for terminal status refunded", () => {
+    expect(getValidTransitions("refunded", "buyer")).toEqual([])
+    expect(getValidTransitions("refunded", "seller")).toEqual([])
+  })
+
   it("no actions for disputed", () => {
     expect(getValidTransitions("disputed", "buyer")).toEqual([])
     expect(getValidTransitions("disputed", "seller")).toEqual([])
   })
 
   it("no actions for non-participant (none role)", () => {
-    const statuses: OrderStatus[] = ["pending", "paid", "shipped", "delivered", "completed", "disputed", "cancelled"]
+    const statuses: OrderStatus[] = ["pending", "paid", "shipped", "delivered", "completed", "disputed", "cancelled", "expired", "refunded"]
     for (const s of statuses) {
       expect(getValidTransitions(s, "none")).toEqual([])
     }
@@ -86,6 +96,14 @@ describe("statusColor", () => {
   it("returns red for cancelled", () => {
     expect(statusColor("cancelled")).toBe("red")
   })
+
+  it("returns red for expired", () => {
+    expect(statusColor("expired")).toBe("red")
+  })
+
+  it("returns red for refunded", () => {
+    expect(statusColor("refunded")).toBe("red")
+  })
 })
 
 describe("statusLabel", () => {
@@ -97,5 +115,7 @@ describe("statusLabel", () => {
     expect(statusLabel("completed")).toBe("Completed")
     expect(statusLabel("disputed")).toBe("Disputed")
     expect(statusLabel("cancelled")).toBe("Cancelled")
+    expect(statusLabel("expired")).toBe("Expired")
+    expect(statusLabel("refunded")).toBe("Refunded")
   })
 })
