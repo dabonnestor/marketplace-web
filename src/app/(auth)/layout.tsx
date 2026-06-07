@@ -1,14 +1,14 @@
 import Link from "next/link"
 import { Package } from "lucide-react"
 import { redirect } from "next/navigation"
-import { getMe } from "@/lib/api/client"
+import { getCurrentUser } from "@/actions/auth"
 
 export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const user = await getMe()
+  const user = await getCurrentUser()
   if (user) {
     redirect("/")
   }

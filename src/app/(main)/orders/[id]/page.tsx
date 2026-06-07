@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
-import { getOrder, getListing, getMe, ApiRequestError } from "@/lib/api/client"
+import { getOrder, getListing, ApiRequestError } from "@/lib/api/client"
+import { getCurrentUser } from "@/actions/auth"
 import { OrderDetail } from "@/components/orders/order-detail"
 
 type Props = {
@@ -8,6 +9,9 @@ type Props = {
 
 export default async function OrderDetailPage({ params }: Props) {
   const { id } = await params
+
+  const currentUser = await getCurrentUser()
+  const currentUserId = currentUser?.id ?? null
 
   let order
   try {
@@ -27,14 +31,6 @@ export default async function OrderDetailPage({ params }: Props) {
       notFound()
     }
     throw e
-  }
-
-  let currentUserId: string | null = null
-  try {
-    const user = await getMe()
-    currentUserId = user?.id ?? null
-  } catch {
-    // Not authenticated — that's fine
   }
 
   return (

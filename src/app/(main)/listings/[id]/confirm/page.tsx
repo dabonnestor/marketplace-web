@@ -1,7 +1,8 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getListing, getMe, ApiRequestError } from "@/lib/api/client"
+import { getListing, ApiRequestError } from "@/lib/api/client"
+import { getCurrentUser } from "@/actions/auth"
 import { ConfirmPurchase } from "@/components/listings/confirm-purchase"
 
 type Props = {
@@ -34,13 +35,8 @@ export default async function ConfirmPurchasePage({ params }: Props) {
     throw e
   }
 
-  let currentUserId: string | null = null
-  try {
-    const user = await getMe()
-    currentUserId = user?.id ?? null
-  } catch {
-    // Not authenticated — that's fine
-  }
+  const currentUser = await getCurrentUser()
+  const currentUserId = currentUser?.id ?? null
 
   return (
     <Suspense>

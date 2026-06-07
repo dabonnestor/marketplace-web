@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation"
-import { getListing, getMe, ApiRequestError } from "@/lib/api/client"
+import { getListing, ApiRequestError } from "@/lib/api/client"
+import { getCurrentUser } from "@/actions/auth"
 import { CreateListingForm } from "@/components/listings/create-listing-form"
 
 export default async function EditListingPage({
@@ -19,11 +20,9 @@ export default async function EditListingPage({
     throw e
   }
 
-  let currentUserId: string | null = null
-  try {
-    const user = await getMe()
-    currentUserId = user?.id ?? null
-  } catch {
+  const currentUser = await getCurrentUser()
+  const currentUserId = currentUser?.id ?? null
+  if (!currentUserId) {
     redirect("/login")
   }
 
