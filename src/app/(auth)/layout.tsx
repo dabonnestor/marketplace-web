@@ -1,18 +1,11 @@
 import Link from "next/link"
 import { Package } from "lucide-react"
-import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/actions/auth"
 
-export default async function AuthLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const user = await getCurrentUser()
-  if (user) {
-    redirect("/")
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
