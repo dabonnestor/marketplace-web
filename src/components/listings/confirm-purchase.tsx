@@ -145,7 +145,10 @@ export function ConfirmPurchase({
           <StripePaymentForm
             clientSecret={order.clientSecret}
             orderId={order.id}
-            onSuccess={() => router.push(`/orders/${order.id}`)}
+            onSuccess={() => {
+              queryClient.removeQueries({ queryKey: ["order", order.id] })
+              router.push(`/orders/${order.id}`)
+            }}
           />
         )}
       </div>
