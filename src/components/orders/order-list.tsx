@@ -15,23 +15,33 @@ import { Button } from "@/components/ui/button"
 type Order = PurchaseOrder | SaleOrder
 type Role = "buyer" | "seller"
 
-const STATUSES = ["pending", "paid", "shipped", "delivered", "completed", "cancelled"] as const
+const STATUSES = [
+  "pending",
+  "paid",
+  "shipped",
+  "delivered",
+  "completed",
+  "cancelled",
+] as const
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString()
 }
 
-const CONFIG: Record<Role, {
-  queryKey: string
-  fetcher: typeof fetchPurchases
-  baseUrl: string
-  counterpartyField: "sellerName" | "buyerName"
-  loadingLabel: string
-  errorMessage: string
-  emptyMessage: string
-  emptyCtaHref: string
-  emptyCtaLabel: string
-}> = {
+const CONFIG: Record<
+  Role,
+  {
+    queryKey: string
+    fetcher: typeof fetchPurchases
+    baseUrl: string
+    counterpartyField: "sellerName" | "buyerName"
+    loadingLabel: string
+    errorMessage: string
+    emptyMessage: string
+    emptyCtaHref: string
+    emptyCtaLabel: string
+  }
+> = {
   buyer: {
     queryKey: "purchases",
     fetcher: fetchPurchases,
@@ -70,9 +80,7 @@ function StatusTabs({
         aria-selected={!status}
         onClick={() => onSelect(null)}
         className={`px-3 py-1.5 text-sm rounded-md ${
-          !status
-            ? "bg-primary text-primary-foreground"
-            : "hover:bg-muted"
+          !status ? "bg-primary text-primary-foreground" : "hover:bg-muted"
         }`}
       >
         All
@@ -106,11 +114,12 @@ export function OrderList({ role }: OrderListProps) {
   const searchParams = useSearchParams()
 
   const page = Number(searchParams.get("page")) || 1
+  const limit = 5
   const status = searchParams.get("status") || undefined
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: [cfg.queryKey, { page, status }],
-    queryFn: () => cfg.fetcher({ page, status }),
+    queryFn: () => cfg.fetcher({ page, limit, status }),
   })
 
   const setStatus = useCallback(
@@ -119,7 +128,7 @@ export function OrderList({ role }: OrderListProps) {
       if (newStatus) params.set("status", newStatus)
       router.push(`${cfg.baseUrl}${newStatus ? `?${params.toString()}` : ""}`)
     },
-    [router, cfg.baseUrl]
+    [router, cfg.baseUrl],
   )
 
   if (isLoading) {
@@ -140,7 +149,10 @@ export function OrderList({ role }: OrderListProps) {
         </div>
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 rounded-lg border p-4">
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-lg border p-4"
+            >
               <Skeleton className="h-16 w-16 shrink-0 rounded-md" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-3/4" />
@@ -184,9 +196,7 @@ export function OrderList({ role }: OrderListProps) {
       <div>
         <StatusTabs status={status} onSelect={setStatus} />
         <div className="text-center py-16">
-          <p className="text-muted-foreground mb-4">
-            {cfg.emptyMessage}
-          </p>
+          <p className="text-muted-foreground mb-4">{cfg.emptyMessage}</p>
           <Link
             href={cfg.emptyCtaHref}
             className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
@@ -231,7 +241,9 @@ export function OrderList({ role }: OrderListProps) {
                   {order[cfg.counterpartyField]}
                 </p>
               </div>
-              <p className="font-medium tabular-nums w-20 text-right">${order.total}</p>
+              <p className="font-medium tabular-nums w-20 text-right">
+                ${order.total}
+              </p>
               <span
                 className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium w-24 text-center ${badgeClass}`}
               >

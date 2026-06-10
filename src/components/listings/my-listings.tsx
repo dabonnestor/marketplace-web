@@ -13,10 +13,11 @@ import type { Listing, Pagination } from "@/lib/api/types"
 export function MyListings() {
   const searchParams = useSearchParams()
   const page = Number(searchParams.get("page")) || 1
+  const limit = 6
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["my-listings", { page }],
-    queryFn: () => fetchMyListings({ page }),
+    queryFn: () => fetchMyListings({ page, limit }),
   })
 
   if (isLoading) {
@@ -70,7 +71,12 @@ export function MyListings() {
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {listings.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} showStatus showEditButton />
+          <ListingCard
+            key={listing.id}
+            listing={listing}
+            showStatus
+            showEditButton
+          />
         ))}
       </div>
       {pagination.totalPages > 1 && (

@@ -16,6 +16,7 @@ export function ListingsContent() {
 
   const params = {
     page: Number(searchParams.get("page")) || 1,
+    limit: 6,
     category: searchParams.get("category") || undefined,
     search: searchParams.get("search") || undefined,
     minPrice: searchParams.get("minPrice")
