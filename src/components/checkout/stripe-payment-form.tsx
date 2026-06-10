@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import {
   Elements,
   PaymentElement,
@@ -12,6 +11,7 @@ import {
   type Stripe,
   type StripeElementsOptions,
 } from "@stripe/stripe-js"
+import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { payOrder } from "@/actions/orders"
 import { Button } from "@/components/ui/button"
@@ -75,36 +75,39 @@ interface StripePaymentFormProps {
 function PaymentFormInner({ orderId, onSuccess }: StripePaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
-  const [isProcessing, setIsProcessing] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  const { mutate: doPayment, isPending: isProcessing } = useMutation({
+    mutationFn: async () => {
+      const { error } = await stripe!.confirmPayment({
+        elements: elements!,
+        confirmParams: {
+          return_url: window.location.href,
+        },
+        redirect: "if_required",
+      })
+
+      if (error) {
+        throw new Error(error.message ?? "Payment failed")
+      }
+
+      return payOrder(orderId)
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        onSuccess()
+      } else {
+        toast.error(result.error)
+      }
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Payment failed")
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!stripe || !elements) return
-
-    setIsProcessing(true)
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.href,
-      },
-      redirect: "if_required",
-    })
-
-    if (error) {
-      toast.error(error.message ?? "Payment failed")
-      setIsProcessing(false)
-      return
-    }
-
-    const result = await payOrder(orderId)
-    setIsProcessing(false)
-
-    if (result.success) {
-      onSuccess()
-    } else {
-      toast.error(result.error)
-    }
+    doPayment()
   }
 
   return (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createOrder, fetchOrder } from "@/actions/orders"
 import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
@@ -39,11 +40,11 @@ export function ConfirmPurchase({
   currentUserId: string | null
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const orderIdParam = searchParams.get("orderId")
 
   const [order, setOrder] = useState<Order | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     if (currentUserId === null && listing.status !== "sold") {
@@ -51,22 +52,18 @@ export function ConfirmPurchase({
     }
   }, [currentUserId, listing.id, listing.status, router])
 
-  useEffect(() => {
-    if (!orderIdParam) return
-
-    fetchOrder(orderIdParam).then((result) => {
+  const { mutate: handleCreateOrder, isPending: isCreating } = useMutation({
+    mutationFn: () => createOrder(listing.id),
+    onSuccess: (result) => {
       if (result.success && result.order) {
-        if (result.order.status === "pending") {
-          setOrder(result.order)
-        } else {
-          router.push(`/orders/${result.order.id}`)
-        }
+        queryClient.invalidateQueries({ queryKey: ["purchases"] })
+        setOrder(result.order)
+        router.replace(`?orderId=${result.order.id}`)
       } else {
-        toast.error(result.error || "Failed to fetch order")
-        router.replace(window.location.pathname)
+        toast.error(result.error || "Failed to create order")
       }
-    })
-  }, [orderIdParam, router])
+    },
+  })
 
   if (listing.status === "sold") {
     return (
@@ -84,18 +81,25 @@ export function ConfirmPurchase({
     )
   }
 
-  async function handleCreateOrder() {
-    setIsCreating(true)
-    const result = await createOrder(listing.id)
-    setIsCreating(false)
+  const { data: orderResult } = useQuery({
+    queryKey: ["order", orderIdParam],
+    queryFn: () => fetchOrder(orderIdParam!),
+    enabled: !!orderIdParam,
+  })
 
-    if (result.success && result.order) {
-      setOrder(result.order)
-      router.replace(`?orderId=${result.order.id}`)
+  useEffect(() => {
+    if (!orderResult) return
+    if (orderResult.success && orderResult.order) {
+      if (orderResult.order.status === "pending") {
+        setOrder(orderResult.order)
+      } else {
+        router.push(`/orders/${orderResult.order.id}`)
+      }
     } else {
-      toast.error(result.error || "Failed to create order")
+      toast.error(orderResult.error || "Failed to fetch order")
+      router.replace(window.location.pathname)
     }
-  }
+  }, [orderResult, router])
 
   // Step 2: server-computed price breakdown + StripePaymentForm
   if (order) {
@@ -185,7 +189,7 @@ export function ConfirmPurchase({
       </Card>
 
       <Button
-        onClick={handleCreateOrder}
+        onClick={() => handleCreateOrder()}
         disabled={isCreating}
         className="w-full"
       >

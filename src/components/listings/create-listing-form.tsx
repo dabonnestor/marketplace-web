@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -55,9 +56,7 @@ interface CreateListingFormProps {
 
 export function CreateListingForm({ listing }: CreateListingFormProps) {
   const isEdit = !!listing
-  const [isPending, setIsPending] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [existingImages, setExistingImages] = useState<string[]>(
     listing?.images ?? []
@@ -81,6 +80,71 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
     },
   })
 
+  function setServerError(message: string) {
+    const lower = message.toLowerCase()
+    if (lower.includes("title")) form.setError("title", { message })
+    else if (lower.includes("description")) form.setError("description", { message })
+    else if (lower.includes("price")) form.setError("price", { message })
+    else if (lower.includes("category")) form.setError("category", { message })
+    else if (lower.includes("condition")) form.setError("condition", { message })
+    else form.setError("title", { message })
+  }
+
+  const queryClient = useQueryClient()
+
+  const { mutate: submitListing, isPending } = useMutation({
+    mutationFn: async (data: CreateListingInput) => {
+      let newImageUrls: string[] = []
+      if (selectedFiles.length > 0) {
+        const formData = new FormData()
+        selectedFiles.forEach((f) => formData.append("files", f))
+        const uploadResult = await uploadImages(formData)
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || "Failed to upload images")
+        }
+        newImageUrls = uploadResult.urls ?? []
+      }
+
+      const mergedImages = [...existingImages, ...newImageUrls]
+      const payload = { ...data, images: mergedImages }
+
+      if (isEdit) {
+        return updateListing(listing.id, payload)
+      }
+      return createListing(payload)
+    },
+    onSuccess: (result) => {
+      if (result.success && "listing" in result && result.listing) {
+        queryClient.invalidateQueries({ queryKey: ["listings"] })
+        queryClient.invalidateQueries({ queryKey: ["my-listings"] })
+        toast.success(isEdit ? "Listing updated!" : "Listing created!")
+        router.push(`/listings/${result.listing.id}`)
+      } else {
+        const message = result.error || `Failed to ${isEdit ? "update" : "create"} listing`
+        setServerError(message)
+        toast.error(message)
+      }
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Something went wrong")
+    },
+  })
+
+  const { mutate: handleDelete, isPending: isDeleting } = useMutation({
+    mutationFn: () => deleteListing(listing!.id),
+    onSuccess: (result) => {
+      setShowDeleteDialog(false)
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["listings"] })
+        queryClient.invalidateQueries({ queryKey: ["my-listings"] })
+        toast.success("Listing deleted")
+        router.push("/listings")
+      } else {
+        toast.error(result.error || "Failed to delete listing")
+      }
+    },
+  })
+
   function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
     setSelectedFiles((prev) => [...prev, ...files])
@@ -96,76 +160,8 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
     setExistingImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  async function onSubmit(data: CreateListingInput) {
-    setIsPending(true)
-
-    // Upload new images if any
-    let newImageUrls: string[] = []
-    if (selectedFiles.length > 0) {
-      const formData = new FormData()
-      selectedFiles.forEach((f) => formData.append("files", f))
-      const uploadResult = await uploadImages(formData)
-      if (!uploadResult.success) {
-        setIsPending(false)
-        toast.error(uploadResult.error || "Failed to upload images")
-        return
-      }
-      newImageUrls = uploadResult.urls ?? []
-    }
-
-    const mergedImages = [...existingImages, ...newImageUrls]
-    const payload = { ...data, images: mergedImages }
-
-    function setServerError(message: string) {
-      const lower = message.toLowerCase()
-      if (lower.includes("title")) form.setError("title", { message })
-      else if (lower.includes("description")) form.setError("description", { message })
-      else if (lower.includes("price")) form.setError("price", { message })
-      else if (lower.includes("category")) form.setError("category", { message })
-      else if (lower.includes("condition")) form.setError("condition", { message })
-      else form.setError("title", { message })
-    }
-
-    if (isEdit) {
-      const result = await updateListing(listing.id, payload)
-      setIsPending(false)
-
-      if (result.success && result.listing) {
-        toast.success("Listing updated!")
-        router.push(`/listings/${result.listing.id}`)
-      } else {
-        const message = result.error || "Failed to update listing"
-        setServerError(message)
-        toast.error(message)
-      }
-    } else {
-      const result = await createListing(payload)
-      setIsPending(false)
-
-      if (result.success && result.listing) {
-        toast.success("Listing created!")
-        router.push(`/listings/${result.listing.id}`)
-      } else {
-        const message = result.error || "Failed to create listing"
-        setServerError(message)
-        toast.error(message)
-      }
-    }
-  }
-
-  async function handleDelete() {
-    if (!listing) return
-    setIsDeleting(true)
-    const result = await deleteListing(listing.id)
-    setIsDeleting(false)
-    setShowDeleteDialog(false)
-
-    if (result.success) {
-      toast.success("Listing deleted")
-      router.push("/listings")
-    } else {
-      toast.error(result.error || "Failed to delete listing")
-    }
+  function onSubmit(data: CreateListingInput) {
+    submitListing(data)
   }
 
   return (
@@ -394,7 +390,7 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={handleDelete}
+                        onClick={() => handleDelete()}
                         disabled={isDeleting}
                       >
                         {isDeleting ? "Deleting..." : "Confirm"}

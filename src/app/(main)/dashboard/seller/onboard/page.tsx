@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { getOnboardStatus, onboardSeller } from "@/actions/seller"
@@ -11,11 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default function SellerOnboardPage() {
   const searchParams = useSearchParams()
   const errorParam = searchParams.get("error")
-  const [retrying, setRetrying] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ["onboard-status"],
     queryFn: () => getOnboardStatus(),
+  })
+
+  const { mutate: handleRetry, isPending: retrying } = useMutation({
+    mutationFn: () => onboardSeller(),
+    onSuccess: (result) => {
+      if (result.success && "url" in result) {
+        window.location.href = result.url
+      }
+    },
   })
 
   if (isLoading) {
@@ -48,15 +55,6 @@ export default function SellerOnboardPage() {
     )
   }
 
-  // Error state: either error param present or not yet onboarded
-  async function handleRetry() {
-    setRetrying(true)
-    const result = await onboardSeller()
-    if (result.success && "url" in result) {
-      window.location.href = result.url
-    }
-  }
-
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="text-4xl mb-4 text-destructive">&#10007;</div>
@@ -64,7 +62,7 @@ export default function SellerOnboardPage() {
       <p className="text-muted-foreground mb-6">
         {errorParam ?? "Something went wrong connecting your Stripe account."}
       </p>
-      <Button onClick={handleRetry} disabled={retrying}>
+      <Button onClick={() => handleRetry()} disabled={retrying}>
         Try again
       </Button>
     </div>

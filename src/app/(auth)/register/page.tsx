@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -28,7 +28,6 @@ import { useAuthStore } from "@/stores/auth-store"
 import { toast } from "sonner"
 
 export default function RegisterPage() {
-  const [isPending, setIsPending] = useState(false)
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
 
@@ -37,27 +36,30 @@ export default function RegisterPage() {
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   })
 
-  async function onSubmit(data: RegisterInput) {
-    setIsPending(true)
-    const result = await register(data.email, data.password, data.name)
-    setIsPending(false)
-
-    if (result.success && result.user) {
-      setUser(result.user)
-      toast.success("Account created!")
-      router.push("/")
-    } else {
-      const message = result.error || "Registration failed"
-      // Map server errors to relevant fields
-      if (message.toLowerCase().includes("password")) {
-        form.setError("password", { message })
-      } else if (message.toLowerCase().includes("email")) {
-        form.setError("email", { message })
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data: RegisterInput) =>
+      register(data.email, data.password, data.name),
+    onSuccess: (result) => {
+      if (result.success && result.user) {
+        setUser(result.user)
+        toast.success("Account created!")
+        router.push("/")
       } else {
-        form.setError("email", { message })
+        const message = result.error || "Registration failed"
+        if (message.toLowerCase().includes("password")) {
+          form.setError("password", { message })
+        } else if (message.toLowerCase().includes("email")) {
+          form.setError("email", { message })
+        } else {
+          form.setError("email", { message })
+        }
+        toast.error(message)
       }
-      toast.error(message)
-    }
+    },
+  })
+
+  function onSubmit(data: RegisterInput) {
+    mutate(data)
   }
 
   return (

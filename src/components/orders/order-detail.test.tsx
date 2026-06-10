@@ -4,25 +4,59 @@ import userEvent from "@testing-library/user-event"
 import { OrderDetail } from "./order-detail"
 import type { Order, Listing } from "@/lib/api/types"
 
-const { mockPush, mockRefresh, mockUpdateOrderStatus, mockCancelOrder, mockRefundOrder, mockSuccessToast, mockErrorToast } =
-  vi.hoisted(() => ({
-    mockPush: vi.fn(),
-    mockRefresh: vi.fn(),
-    mockUpdateOrderStatus: vi.fn(),
-    mockCancelOrder: vi.fn(),
-    mockRefundOrder: vi.fn(),
-    mockSuccessToast: vi.fn(),
-    mockErrorToast: vi.fn(),
-  }))
+const {
+  mockPush,
+  mockUpdateOrderStatus,
+  mockCancelOrder,
+  mockRefundOrder,
+  mockCompleteOrder,
+  mockFetchOrder,
+  mockInvalidateQueries,
+  mockSuccessToast,
+  mockErrorToast,
+} = vi.hoisted(() => ({
+  mockPush: vi.fn(),
+  mockUpdateOrderStatus: vi.fn(),
+  mockCancelOrder: vi.fn(),
+  mockRefundOrder: vi.fn(),
+  mockCompleteOrder: vi.fn(),
+  mockFetchOrder: vi.fn(),
+  mockInvalidateQueries: vi.fn(),
+  mockSuccessToast: vi.fn(),
+  mockErrorToast: vi.fn(),
+}))
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
+  useRouter: () => ({ push: mockPush }),
 }))
 
 vi.mock("@/actions/orders", () => ({
+  fetchOrder: mockFetchOrder,
   updateOrderStatus: mockUpdateOrderStatus,
   cancelOrder: mockCancelOrder,
   refundOrder: mockRefundOrder,
+  completeOrder: mockCompleteOrder,
+}))
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: ({ initialData }: { initialData?: unknown }) => ({
+    data: initialData,
+    isLoading: false,
+  }),
+  useMutation: ({ mutationFn, onSuccess, onError }: {
+    mutationFn: (...args: any[]) => Promise<any>
+    onSuccess?: (result: any, variables: any) => void
+    onError?: (error: Error) => void
+  }) => ({
+    mutate: (variables?: unknown) => {
+      Promise.resolve(mutationFn(variables)).then(
+        (result) => onSuccess?.(result, variables as any),
+        (error) => onError?.(error as Error),
+      )
+    },
+    isPending: false,
+  }),
+  useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
 }))
 
 vi.mock("sonner", () => ({
@@ -465,9 +499,9 @@ describe("OrderDetail payment fallback", () => {
     expect(screen.getByTestId("stripe-payment-form")).toBeInTheDocument()
   })
 
-  it("calls router.refresh after successful payment", async () => {
+  it("calls invalidateQueries after successful payment", async () => {
     const user = userEvent.setup()
-    mockRefresh.mockClear()
+    mockInvalidateQueries.mockClear()
 
     render(
       <OrderDetail
@@ -486,7 +520,9 @@ describe("OrderDetail payment fallback", () => {
       screen.getByRole("button", { name: /mock complete payment/i })
     )
 
-    expect(mockRefresh).toHaveBeenCalled()
+    expect(mockInvalidateQueries).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["order", "order-1"] })
+    )
   })
 })
 
@@ -617,90 +653,6 @@ describe("OrderDetail Refund confirmation dialog", () => {
     await user.click(screen.getByRole("button", { name: /confirm/i }))
 
     expect(mockErrorToast).toHaveBeenCalledWith("Cannot refund this order")
-  })
-})
-
-describe("OrderDetail polling", () => {
-  it("sets up 30-second interval for non-terminal order", () => {
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval")
-    render(
-      <OrderDetail
-        order={makeOrder({ status: "pending" })}
-        listing={listing}
-        currentUserId="buyer-1"
-      />
-    )
-    expect(setIntervalSpy).toHaveBeenCalledWith(
-      expect.any(Function),
-      30000,
-    )
-    setIntervalSpy.mockRestore()
-  })
-
-  it("does not set up interval for terminal completed status", () => {
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval")
-    render(
-      <OrderDetail
-        order={makeOrder({ status: "completed" })}
-        listing={listing}
-        currentUserId="buyer-1"
-      />
-    )
-    expect(setIntervalSpy).not.toHaveBeenCalled()
-    setIntervalSpy.mockRestore()
-  })
-
-  it("does not set up interval for terminal cancelled status", () => {
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval")
-    render(
-      <OrderDetail
-        order={makeOrder({ status: "cancelled" })}
-        listing={listing}
-        currentUserId="buyer-1"
-      />
-    )
-    expect(setIntervalSpy).not.toHaveBeenCalled()
-    setIntervalSpy.mockRestore()
-  })
-
-  it("does not set up interval for terminal expired status", () => {
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval")
-    render(
-      <OrderDetail
-        order={makeOrder({ status: "expired" })}
-        listing={listing}
-        currentUserId="buyer-1"
-      />
-    )
-    expect(setIntervalSpy).not.toHaveBeenCalled()
-    setIntervalSpy.mockRestore()
-  })
-
-  it("does not set up interval for terminal refunded status", () => {
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval")
-    render(
-      <OrderDetail
-        order={makeOrder({ status: "refunded" })}
-        listing={listing}
-        currentUserId="buyer-1"
-      />
-    )
-    expect(setIntervalSpy).not.toHaveBeenCalled()
-    setIntervalSpy.mockRestore()
-  })
-
-  it("clears interval on unmount", () => {
-    const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval")
-    const { unmount } = render(
-      <OrderDetail
-        order={makeOrder({ status: "pending" })}
-        listing={listing}
-        currentUserId="buyer-1"
-      />
-    )
-    unmount()
-    expect(clearIntervalSpy).toHaveBeenCalled()
-    clearIntervalSpy.mockRestore()
   })
 })
 

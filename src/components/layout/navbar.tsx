@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -27,12 +28,14 @@ export function Navbar() {
   const { user, isLoading } = useAuthStore()
   const router = useRouter()
 
-  async function handleLogout() {
-    await logout()
-    useAuthStore.getState().setUser(null)
-    toast.success("Signed out")
-    router.push("/")
-  }
+  const { mutate: handleLogout } = useMutation({
+    mutationFn: () => logout(),
+    onSuccess: () => {
+      useAuthStore.getState().setUser(null)
+      toast.success("Signed out")
+      router.push("/")
+    },
+  })
 
   const navLinks = user
     ? [
@@ -88,7 +91,7 @@ export function Navbar() {
                       <Button
                         variant="ghost"
                         className="justify-start"
-                        onClick={handleLogout}
+                        onClick={() => handleLogout()}
                       >
                         Sign Out
                       </Button>
@@ -139,7 +142,7 @@ export function Navbar() {
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
+                    <DropdownMenuItem onClick={() => handleLogout()}>
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>

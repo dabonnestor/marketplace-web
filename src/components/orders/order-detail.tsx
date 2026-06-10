@@ -3,8 +3,10 @@
 import { useEffect, useState, Fragment } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import {
+  fetchOrder,
   updateOrderStatus,
   cancelOrder,
   completeOrder,
@@ -133,17 +135,32 @@ interface OrderDetailProps {
 }
 
 export function OrderDetail({
-  order,
+  order: initialOrder,
   listing,
   currentUserId,
 }: OrderDetailProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const { data: order } = useQuery({
+    queryKey: ["order", initialOrder.id],
+    queryFn: async () => {
+      const result = await fetchOrder(initialOrder.id)
+      if (result.success && result.order) return result.order
+      throw new Error(result.error || "Failed to fetch order")
+    },
+    initialData: initialOrder,
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (!data) return 30000
+      const terminalStatuses: OrderStatus[] = ["completed", "cancelled", "expired", "refunded"]
+      return terminalStatuses.includes(data.status) ? false : 30000
+    },
+  })
+
   const [targetStatus, setTargetStatus] = useState<OrderStatus | null>(null)
-  const [isPending, setIsPending] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-  const [cancelPending, setCancelPending] = useState(false)
   const [showRefundConfirm, setShowRefundConfirm] = useState(false)
-  const [refundPending, setRefundPending] = useState(false)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
 
   useEffect(() => {
@@ -170,72 +187,57 @@ export function OrderDetail({
   const canCompletePayment =
     role === "buyer" && order.status === "pending" && !!order.clientSecret
 
-  const terminalStatuses: OrderStatus[] = [
-    "completed",
-    "cancelled",
-    "expired",
-    "refunded",
-  ]
-  const isTerminal = terminalStatuses.includes(order.status)
-
-  useEffect(() => {
-    if (isTerminal) return
-    const interval = setInterval(() => {
-      router.refresh()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [isTerminal, router])
-
-  async function handleAction(status: OrderStatus) {
-    setIsPending(true)
-
-    let result: { success: boolean; error?: string }
-    if (status === "completed") {
-      result = await completeOrder(order.id)
-    } else {
-      result = await updateOrderStatus(order.id, {
+  const { mutate: handleAction, isPending } = useMutation({
+    mutationFn: async (status: OrderStatus) => {
+      if (status === "completed") {
+        return completeOrder(order.id)
+      }
+      return updateOrderStatus(order.id, {
         status,
       } as OrderStatusTransition)
-    }
+    },
+    onSuccess: (result, status) => {
+      setTargetStatus(null)
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["purchases"] })
+        queryClient.invalidateQueries({ queryKey: ["sales"] })
+        toast.success(`Order marked as ${statusLabel(status)}`)
+        queryClient.invalidateQueries({ queryKey: ["order", order.id] })
+      } else {
+        toast.error(result.error || "Failed to update order status")
+      }
+    },
+  })
 
-    setIsPending(false)
-    setTargetStatus(null)
+  const { mutate: handleCancel, isPending: cancelPending } = useMutation({
+    mutationFn: () => cancelOrder(order.id),
+    onSuccess: (result) => {
+      setShowCancelConfirm(false)
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["purchases"] })
+        queryClient.invalidateQueries({ queryKey: ["sales"] })
+        toast.success("Order cancelled")
+        queryClient.invalidateQueries({ queryKey: ["order", order.id] })
+      } else {
+        toast.error(result.error || "Failed to cancel order")
+      }
+    },
+  })
 
-    if (result.success) {
-      toast.success(`Order marked as ${statusLabel(status)}`)
-      router.refresh()
-    } else {
-      toast.error(result.error || "Failed to update order status")
-    }
-  }
-
-  async function handleCancel() {
-    setCancelPending(true)
-    const result = await cancelOrder(order.id)
-    setCancelPending(false)
-    setShowCancelConfirm(false)
-
-    if (result.success) {
-      toast.success("Order cancelled")
-      router.refresh()
-    } else {
-      toast.error(result.error || "Failed to cancel order")
-    }
-  }
-
-  async function handleRefund() {
-    setRefundPending(true)
-    const result = await refundOrder(order.id)
-    setRefundPending(false)
-    setShowRefundConfirm(false)
-
-    if (result.success) {
-      toast.success("Order refunded")
-      router.refresh()
-    } else {
-      toast.error(result.error || "Failed to refund order")
-    }
-  }
+  const { mutate: handleRefund, isPending: refundPending } = useMutation({
+    mutationFn: () => refundOrder(order.id),
+    onSuccess: (result) => {
+      setShowRefundConfirm(false)
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["purchases"] })
+        queryClient.invalidateQueries({ queryKey: ["sales"] })
+        toast.success("Order refunded")
+        queryClient.invalidateQueries({ queryKey: ["order", order.id] })
+      } else {
+        toast.error(result.error || "Failed to refund order")
+      }
+    },
+  })
 
   const badgeColor = statusColor(order.status)
 
@@ -322,7 +324,7 @@ export function OrderDetail({
         <StripePaymentForm
           clientSecret={order.clientSecret!}
           orderId={order.id}
-          onSuccess={() => router.refresh()}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ["order", order.id] })}
         />
       )}
 
@@ -403,7 +405,7 @@ export function OrderDetail({
             >
               Cancel
             </Button>
-            <Button onClick={handleCancel} disabled={cancelPending}>
+            <Button onClick={() => handleCancel()} disabled={cancelPending}>
               {cancelPending ? "Cancelling..." : "Confirm"}
             </Button>
           </DialogFooter>
@@ -430,7 +432,7 @@ export function OrderDetail({
             >
               Cancel
             </Button>
-            <Button onClick={handleRefund} disabled={refundPending}>
+            <Button onClick={() => handleRefund()} disabled={refundPending}>
               {refundPending ? "Refunding..." : "Confirm"}
             </Button>
           </DialogFooter>

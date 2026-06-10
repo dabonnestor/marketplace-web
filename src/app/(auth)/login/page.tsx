@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -28,7 +28,6 @@ import { useAuthStore } from "@/stores/auth-store"
 import { toast } from "sonner"
 
 export default function LoginPage() {
-  const [isPending, setIsPending] = useState(false)
   const router = useRouter()
   const setUser = useAuthStore((s) => s.setUser)
 
@@ -37,25 +36,27 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   })
 
-  async function onSubmit(data: LoginInput) {
-    setIsPending(true)
-    const result = await login(data.email, data.password)
-    setIsPending(false)
-
-    if (result.success && result.user) {
-      setUser(result.user)
-      toast.success("Welcome back!")
-      router.push("/")
-    } else {
-      const message = result.error || "Login failed"
-      // Map server errors to relevant fields
-      if (message.toLowerCase().includes("password")) {
-        form.setError("password", { message })
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data: LoginInput) => login(data.email, data.password),
+    onSuccess: (result) => {
+      if (result.success && result.user) {
+        setUser(result.user)
+        toast.success("Welcome back!")
+        router.push("/")
       } else {
-        form.setError("email", { message })
+        const message = result.error || "Login failed"
+        if (message.toLowerCase().includes("password")) {
+          form.setError("password", { message })
+        } else {
+          form.setError("email", { message })
+        }
+        toast.error(message)
       }
-      toast.error(message)
-    }
+    },
+  })
+
+  function onSubmit(data: LoginInput) {
+    mutate(data)
   }
 
   return (

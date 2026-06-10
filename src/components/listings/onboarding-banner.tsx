@@ -1,17 +1,23 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { getOnboardStatus, onboardSeller } from "@/actions/seller"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function OnboardingBanner() {
-  const [loading, setLoading] = useState(false)
-
   const { data, isLoading } = useQuery({
     queryKey: ["onboard-status"],
     queryFn: () => getOnboardStatus(),
+  })
+
+  const { mutate: handleClick, isPending } = useMutation({
+    mutationFn: () => onboardSeller(),
+    onSuccess: (result) => {
+      if (result.success && "url" in result) {
+        window.location.href = result.url
+      }
+    },
   })
 
   if (isLoading) {
@@ -29,14 +35,6 @@ export function OnboardingBanner() {
   )
     return null
 
-  async function handleClick() {
-    setLoading(true)
-    const result = await onboardSeller()
-    if (result.success && "url" in result) {
-      window.location.href = result.url
-    }
-  }
-
   return (
     <div className="rounded-xl border bg-card p-6 mb-6 flex items-center justify-between gap-4">
       <div>
@@ -45,7 +43,7 @@ export function OnboardingBanner() {
           Connect your Stripe account to receive payments for your listings.
         </p>
       </div>
-      <Button onClick={handleClick} disabled={loading}>
+      <Button onClick={() => handleClick()} disabled={isPending}>
         Set up payouts
       </Button>
     </div>

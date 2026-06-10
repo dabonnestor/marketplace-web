@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -35,22 +36,23 @@ function ActionButton({
   currentUserId: string | null
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
 
-  async function handleDelete() {
-    setIsDeleting(true)
-    const result = await deleteListing(listing.id)
-    setIsDeleting(false)
-    setShowDeleteDialog(false)
-
-    if (result.success) {
-      toast.success("Listing deleted")
-      router.push("/listings")
-    } else {
-      toast.error(result.error || "Failed to delete listing")
-    }
-  }
+  const { mutate: handleDelete, isPending: isDeleting } = useMutation({
+    mutationFn: () => deleteListing(listing.id),
+    onSuccess: (result) => {
+      setShowDeleteDialog(false)
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["listings"] })
+        queryClient.invalidateQueries({ queryKey: ["my-listings"] })
+        toast.success("Listing deleted")
+        router.push("/listings")
+      } else {
+        toast.error(result.error || "Failed to delete listing")
+      }
+    },
+  })
 
   if (currentUserId === null) {
     return (
@@ -98,7 +100,7 @@ function ActionButton({
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleDelete}
+                onClick={() => handleDelete()}
                 disabled={isDeleting}
               >
                 {isDeleting ? "Deleting..." : "Confirm"}
