@@ -161,12 +161,8 @@ export function ListingDetail({
 
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Shipping</span>
-          <span>${listing.shippingCost}</span>
-        </div>
-        <div className="flex justify-between">
           <span className="text-muted-foreground">Seller</span>
-          <span>{listing.sellerId}</span>
+          <span>{listing.sellerName}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Listed</span>

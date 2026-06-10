@@ -18,6 +18,7 @@ import { fetchListings } from "@/actions/listings"
 const listing: Listing = {
   id: "1",
   sellerId: "s1",
+  sellerName: "Test Seller",
   title: "Test Item",
   description: "desc",
   price: "10.00",

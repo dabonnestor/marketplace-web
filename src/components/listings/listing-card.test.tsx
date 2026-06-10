@@ -6,6 +6,7 @@ import type { Listing } from "@/lib/api/types"
 const listing: Listing = {
   id: "abc-123",
   sellerId: "seller-1",
+  sellerName: "Test Seller",
   title: "Vintage Watch",
   description: "A beautiful vintage watch",
   price: "99.99",

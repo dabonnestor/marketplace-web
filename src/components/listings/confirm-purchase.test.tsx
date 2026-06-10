@@ -70,6 +70,7 @@ vi.mock("sonner", () => ({
 const listing: Listing = {
   id: "abc-123",
   sellerId: "seller-1",
+  sellerName: "Test Seller",
   title: "Vintage Watch",
   description: "A beautiful vintage watch",
   price: "100.00",

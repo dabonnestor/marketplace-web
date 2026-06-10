@@ -23,6 +23,7 @@ function makeListing(overrides: Partial<Listing> = {}): Listing {
   return {
     id: "listing-1",
     sellerId: "seller-1",
+    sellerName: "Test Seller",
     title: "Vintage Watch",
     description: "A beautiful vintage watch",
     price: "99.99",

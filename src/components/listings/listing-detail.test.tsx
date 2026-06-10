@@ -44,6 +44,7 @@ vi.mock("sonner", () => ({
 const listing: Listing = {
   id: "abc-123",
   sellerId: "seller-1",
+  sellerName: "Test Seller",
   title: "Vintage Watch",
   description: "A beautiful vintage watch",
   price: "99.99",
@@ -71,14 +72,13 @@ describe("ListingDetail", () => {
     expect(screen.getByText("$99.99")).toBeInTheDocument()
   })
 
-  it("renders description, condition badge, category, shipping cost, seller name, and date", () => {
+  it("renders description, condition badge, category, seller name, and date", () => {
     renderWithClient(<ListingDetail listing={listing} currentUserId={null} />)
 
     expect(screen.getByText("A beautiful vintage watch")).toBeInTheDocument()
     expect(screen.getByText("Like New")).toBeInTheDocument()
     expect(screen.getByText("Electronics")).toBeInTheDocument()
-    expect(screen.getByText("$5.00")).toBeInTheDocument()
-    expect(screen.getByText("seller-1")).toBeInTheDocument()
+    expect(screen.getByText("Test Seller")).toBeInTheDocument()
     expect(screen.getByText(/january 1, 2025/i)).toBeInTheDocument()
   })
 

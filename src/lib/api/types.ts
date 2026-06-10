@@ -11,6 +11,7 @@ export interface User {
 export interface Listing {
   id: string
   sellerId: string
+  sellerName: string
   title: string
   description: string
   price: string

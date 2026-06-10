@@ -270,6 +270,7 @@ describe("CreateListingForm", () => {
     const editListing: Listing = {
       id: "edit-123",
       sellerId: "seller-1",
+      sellerName: "Test Seller",
       title: "Vintage Watch",
       description: "A beautiful vintage watch",
       price: "99.99",
