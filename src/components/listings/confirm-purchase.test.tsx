@@ -1,8 +1,21 @@
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConfirmPurchase } from "@/components/listings/confirm-purchase"
 import type { Listing } from "@/lib/api/types"
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+})
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  })
+}
 
 const {
   mockPush,
@@ -82,7 +95,7 @@ function resetMocks() {
 describe("ConfirmPurchase", () => {
   it("shows not-available message when listing is already sold", () => {
     const soldListing = { ...listing, status: "sold" as const }
-    render(
+    renderWithClient(
       <ConfirmPurchase listing={soldListing} currentUserId="buyer-99" />
     )
 
@@ -94,7 +107,7 @@ describe("ConfirmPurchase", () => {
 
   it("redirects unauthenticated user to login with return URL", () => {
     resetMocks()
-    render(<ConfirmPurchase listing={listing} currentUserId={null} />)
+    renderWithClient(<ConfirmPurchase listing={listing} currentUserId={null} />)
 
     expect(mockPush).toHaveBeenCalledWith(
       `/login?redirect=/listings/${listing.id}/confirm`
@@ -104,7 +117,7 @@ describe("ConfirmPurchase", () => {
   describe("step 1", () => {
     it("renders listing summary, platform fee note, and proceed button", () => {
       resetMocks()
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -118,7 +131,7 @@ describe("ConfirmPurchase", () => {
 
     it("does not show client-side calculated price breakdown in step 1", () => {
       resetMocks()
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -144,7 +157,7 @@ describe("ConfirmPurchase", () => {
         },
       })
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -170,7 +183,7 @@ describe("ConfirmPurchase", () => {
         error: "Listing is no longer available",
       })
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -194,7 +207,7 @@ describe("ConfirmPurchase", () => {
 
       mockCreateOrder.mockReturnValue(new Promise(() => {}))
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -225,7 +238,7 @@ describe("ConfirmPurchase", () => {
         },
       })
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -259,7 +272,7 @@ describe("ConfirmPurchase", () => {
         },
       })
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -286,7 +299,7 @@ describe("ConfirmPurchase", () => {
         },
       })
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 
@@ -305,7 +318,7 @@ describe("ConfirmPurchase", () => {
         error: "Order not found",
       })
 
-      render(
+      renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
       )
 

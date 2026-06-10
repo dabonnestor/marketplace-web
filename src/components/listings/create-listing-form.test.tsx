@@ -2,8 +2,21 @@ import React, { createContext, useContext, type ReactNode } from "react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { CreateListingForm } from "@/components/listings/create-listing-form"
 import type { Listing } from "@/lib/api/types"
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+})
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  })
+}
 
 const { mockPush, mockCreateListing, mockUpdateListing, mockDeleteListing, mockSuccessToast, mockErrorToast, mockUploadImages } =
   vi.hoisted(() => ({
@@ -116,7 +129,7 @@ vi.mock("@/components/ui/select", () => {
 
 async function fillValidForm() {
   const user = userEvent.setup()
-  render(<CreateListingForm />)
+  renderWithClient(<CreateListingForm />)
 
   await user.type(screen.getByLabelText("Title"), "Test Watch")
   await user.type(screen.getByLabelText("Description"), "A nice watch")
@@ -139,7 +152,7 @@ describe("CreateListingForm", () => {
   })
 
   it("renders all required fields", () => {
-    render(<CreateListingForm />)
+    renderWithClient(<CreateListingForm />)
 
     expect(screen.getByLabelText("Title")).toBeInTheDocument()
     expect(screen.getByLabelText("Description")).toBeInTheDocument()
@@ -152,7 +165,7 @@ describe("CreateListingForm", () => {
 
   it("shows validation errors when submitted empty", async () => {
     const user = userEvent.setup()
-    render(<CreateListingForm />)
+    renderWithClient(<CreateListingForm />)
 
     await user.click(screen.getByRole("button", { name: /create listing/i }))
 
@@ -166,7 +179,7 @@ describe("CreateListingForm", () => {
 
   it("shows error for negative price", async () => {
     const user = userEvent.setup()
-    render(<CreateListingForm />)
+    renderWithClient(<CreateListingForm />)
 
     const priceInput = screen.getByLabelText("Price")
     await user.type(priceInput, "-5")
@@ -270,7 +283,7 @@ describe("CreateListingForm", () => {
     }
 
     it("pre-populates form fields with existing listing data", () => {
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       expect(screen.getByLabelText("Title")).toHaveValue("Vintage Watch")
       expect(screen.getByLabelText("Description")).toHaveValue(
@@ -282,7 +295,7 @@ describe("CreateListingForm", () => {
     })
 
     it("renders edit-specific title and submit button", () => {
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       expect(screen.getByText("Edit Listing")).toBeInTheDocument()
       expect(
@@ -291,7 +304,7 @@ describe("CreateListingForm", () => {
     })
 
     it("shows existing image URLs with remove buttons", () => {
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       expect(screen.getByText(/watch\.jpg/)).toBeInTheDocument()
       expect(screen.getByRole("button", { name: /remove/i })).toBeInTheDocument()
@@ -299,7 +312,7 @@ describe("CreateListingForm", () => {
 
     it("removes an existing image when the remove button is clicked", async () => {
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       expect(screen.getByText(/watch\.jpg/)).toBeInTheDocument()
 
@@ -314,7 +327,7 @@ describe("CreateListingForm", () => {
       })
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       // Change title to trigger a modification
       const titleInput = screen.getByLabelText("Title")
@@ -348,7 +361,7 @@ describe("CreateListingForm", () => {
       })
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /save changes/i })
@@ -367,7 +380,7 @@ describe("CreateListingForm", () => {
       })
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /save changes/i })
@@ -394,7 +407,7 @@ describe("CreateListingForm", () => {
       })
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       // Upload a new file (label is "Add Images" in edit mode)
       const file = new File(["new"], "new.jpg", { type: "image/jpeg" })
@@ -426,7 +439,7 @@ describe("CreateListingForm", () => {
       mockUpdateListing.mockReturnValue(pending)
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /save changes/i })
@@ -443,7 +456,7 @@ describe("CreateListingForm", () => {
     })
 
     it("shows Delete button only in edit mode", () => {
-      const { rerender } = render(
+      const { rerender } = renderWithClient(
         <CreateListingForm listing={editListing} />
       )
 
@@ -460,7 +473,7 @@ describe("CreateListingForm", () => {
 
     it("opens delete confirmation dialog", async () => {
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /delete listing/i })
@@ -476,7 +489,7 @@ describe("CreateListingForm", () => {
       mockDeleteListing.mockResolvedValue({ success: true })
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /delete listing/i })
@@ -499,7 +512,7 @@ describe("CreateListingForm", () => {
       })
 
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /delete listing/i })
@@ -516,7 +529,7 @@ describe("CreateListingForm", () => {
 
     it("closes delete dialog when Cancel is clicked", async () => {
       const user = userEvent.setup()
-      render(<CreateListingForm listing={editListing} />)
+      renderWithClient(<CreateListingForm listing={editListing} />)
 
       await user.click(
         screen.getByRole("button", { name: /delete listing/i })
@@ -530,7 +543,7 @@ describe("CreateListingForm", () => {
 
   describe("image upload", () => {
     it("renders an image picker area with a file input", () => {
-      render(<CreateListingForm />)
+      renderWithClient(<CreateListingForm />)
 
       const fileInput = screen.getByLabelText("Images")
       expect(fileInput).toBeInTheDocument()
@@ -539,7 +552,7 @@ describe("CreateListingForm", () => {
 
     it("shows previews for selected files", async () => {
       const user = userEvent.setup()
-      render(<CreateListingForm />)
+      renderWithClient(<CreateListingForm />)
 
       const file = new File(["dummy"], "test-image.png", { type: "image/png" })
       const fileInput = screen.getByLabelText("Images") as HTMLInputElement
@@ -553,7 +566,7 @@ describe("CreateListingForm", () => {
 
     it("removes a file when the remove button is clicked", async () => {
       const user = userEvent.setup()
-      render(<CreateListingForm />)
+      renderWithClient(<CreateListingForm />)
 
       const file = new File(["dummy"], "test-image.png", { type: "image/png" })
       const fileInput = screen.getByLabelText("Images") as HTMLInputElement
@@ -579,7 +592,7 @@ describe("CreateListingForm", () => {
       })
 
       const user = userEvent.setup()
-      render(<CreateListingForm />)
+      renderWithClient(<CreateListingForm />)
 
       // Fill the form
       await user.type(screen.getByLabelText("Title"), "Test Watch")

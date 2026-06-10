@@ -1,7 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Navbar } from "@/components/layout/navbar"
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+})
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  })
+}
 
 const {
   mockPush,
@@ -72,7 +85,7 @@ describe("Navbar", () => {
     const user = userEvent.setup()
     mockLogout.mockResolvedValue(undefined)
 
-    render(<Navbar />)
+    renderWithClient(<Navbar />)
 
     // Open the mobile hamburger menu
     const menuButton = screen.getByRole("button", { name: /menu/i })

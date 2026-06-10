@@ -1,7 +1,20 @@
 import { describe, it, expect, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+})
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  })
+}
 
 const { mockConfirmPayment, mockErrorToast, mockPayOrder } = vi.hoisted(() => ({
   mockConfirmPayment: vi.fn(),
@@ -30,7 +43,7 @@ vi.mock("sonner", () => ({
 
 describe("StripePaymentForm", () => {
   it("renders the payment element and a pay button", () => {
-    render(
+    renderWithClient(
       <StripePaymentForm
         clientSecret="cs_test_123"
         orderId="order-1"
@@ -46,7 +59,7 @@ describe("StripePaymentForm", () => {
     const user = userEvent.setup()
     mockConfirmPayment.mockReturnValue(new Promise(() => {}))
 
-    render(
+    renderWithClient(
       <StripePaymentForm
         clientSecret="cs_test_123"
         orderId="order-1"
@@ -71,7 +84,7 @@ describe("StripePaymentForm", () => {
     mockConfirmPayment.mockResolvedValue({ error: null })
     mockPayOrder.mockResolvedValue({ success: true })
 
-    render(
+    renderWithClient(
       <StripePaymentForm
         clientSecret="cs_test_123"
         orderId="order-1"
@@ -97,7 +110,7 @@ describe("StripePaymentForm", () => {
       error: { message: "Your card was declined." },
     })
 
-    render(
+    renderWithClient(
       <StripePaymentForm
         clientSecret="cs_test_123"
         orderId="order-1"
@@ -125,7 +138,7 @@ describe("StripePaymentForm", () => {
       error: "Order already paid",
     })
 
-    render(
+    renderWithClient(
       <StripePaymentForm
         clientSecret="cs_test_123"
         orderId="order-1"

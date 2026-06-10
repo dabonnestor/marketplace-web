@@ -1,7 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import LoginPage from "@/app/(auth)/login/page"
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+})
+
+function renderWithClient(ui: React.ReactElement) {
+  return render(ui, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  })
+}
 
 const { mockPush, mockLogin, mockSetUser, mockSuccessToast, mockErrorToast } =
   vi.hoisted(() => ({
@@ -35,7 +48,7 @@ vi.mock("@/stores/auth-store", () => ({
 
 async function fillAndSubmit(email: string, password: string) {
   const user = userEvent.setup()
-  render(<LoginPage />)
+  renderWithClient(<LoginPage />)
 
   await user.type(screen.getByLabelText("Email"), email)
   await user.type(screen.getByLabelText("Password"), password)

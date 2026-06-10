@@ -179,7 +179,7 @@ describe("OrderDetail", () => {
     expect(screen.getByText(/completed/i)).toBeInTheDocument()
   })
 
-  it("buyer of pending order sees Mark as Paid button", () => {
+  it("buyer of pending order sees no transition action buttons", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "pending" })}
@@ -188,8 +188,8 @@ describe("OrderDetail", () => {
       />
     )
     expect(
-      screen.getByRole("button", { name: /mark as paid/i })
-    ).toBeInTheDocument()
+      screen.queryByRole("button", { name: /mark as/i })
+    ).not.toBeInTheDocument()
   })
 
   it("buyer of delivered order sees Mark as Completed button", () => {
@@ -312,7 +312,7 @@ describe("OrderDetail Cancel button", () => {
     ).toBeInTheDocument()
   })
 
-  it("buyer of paid order sees Cancel Order button", () => {
+  it("buyer of paid order does not see Cancel Order button", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "paid" })}
@@ -321,8 +321,8 @@ describe("OrderDetail Cancel button", () => {
       />
     )
     expect(
-      screen.getByRole("button", { name: /cancel order/i })
-    ).toBeInTheDocument()
+      screen.queryByRole("button", { name: /cancel order/i })
+    ).not.toBeInTheDocument()
   })
 
   it("buyer of shipped order does not see Cancel Order button", () => {
@@ -661,15 +661,15 @@ describe("OrderDetail confirmation dialog", () => {
     const user = userEvent.setup()
     render(
       <OrderDetail
-        order={makeOrder({ status: "pending" })}
+        order={makeOrder({ status: "paid" })}
         listing={listing}
-        currentUserId="buyer-1"
+        currentUserId="seller-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /mark as paid/i }))
+    await user.click(screen.getByRole("button", { name: /mark as shipped/i }))
     expect(screen.getByRole("dialog")).toBeInTheDocument()
     expect(
-      screen.getByText(/are you sure you want to mark this order as paid\?/i)
+      screen.getByText(/are you sure you want to mark this order as shipped\?/i)
     ).toBeInTheDocument()
   })
 
@@ -697,21 +697,21 @@ describe("OrderDetail confirmation dialog", () => {
 
     mockUpdateOrderStatus.mockResolvedValue({
       success: true,
-      order: makeOrder({ status: "paid" }),
+      order: makeOrder({ status: "shipped" }),
     })
 
     render(
       <OrderDetail
-        order={makeOrder({ status: "pending" })}
+        order={makeOrder({ status: "paid" })}
         listing={listing}
-        currentUserId="buyer-1"
+        currentUserId="seller-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /mark as paid/i }))
+    await user.click(screen.getByRole("button", { name: /mark as shipped/i }))
     await user.click(screen.getByRole("button", { name: /confirm/i }))
 
     expect(mockUpdateOrderStatus).toHaveBeenCalledWith("order-1", {
-      status: "paid",
+      status: "shipped",
     })
     expect(mockSuccessToast).toHaveBeenCalled()
   })
@@ -728,12 +728,12 @@ describe("OrderDetail confirmation dialog", () => {
 
     render(
       <OrderDetail
-        order={makeOrder({ status: "pending" })}
+        order={makeOrder({ status: "paid" })}
         listing={listing}
-        currentUserId="buyer-1"
+        currentUserId="seller-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /mark as paid/i }))
+    await user.click(screen.getByRole("button", { name: /mark as shipped/i }))
     await user.click(screen.getByRole("button", { name: /confirm/i }))
 
     expect(mockErrorToast).toHaveBeenCalledWith("Transition not allowed")
@@ -745,35 +745,42 @@ describe("OrderDetail confirmation dialog", () => {
 
     render(
       <OrderDetail
-        order={makeOrder({ status: "pending" })}
+        order={makeOrder({ status: "paid" })}
         listing={listing}
-        currentUserId="buyer-1"
+        currentUserId="seller-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /mark as paid/i }))
+    await user.click(screen.getByRole("button", { name: /mark as shipped/i }))
     await user.click(screen.getByRole("button", { name: /cancel/i }))
 
     expect(mockUpdateOrderStatus).not.toHaveBeenCalled()
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
   })
 
-  it("disables button and shows loading while updating", async () => {
+  it("calls completeOrder when marking as completed", async () => {
     const user = userEvent.setup()
-    mockUpdateOrderStatus.mockReset()
-    mockUpdateOrderStatus.mockReturnValue(new Promise(() => {}))
+    mockCompleteOrder.mockClear()
+    mockSuccessToast.mockClear()
+
+    mockCompleteOrder.mockResolvedValue({
+      success: true,
+      order: makeOrder({ status: "completed" }),
+    })
 
     render(
       <OrderDetail
-        order={makeOrder({ status: "pending" })}
+        order={makeOrder({ status: "delivered" })}
         listing={listing}
         currentUserId="buyer-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /mark as paid/i }))
+    await user.click(
+      screen.getByRole("button", { name: /mark as completed/i })
+    )
+    await user.click(screen.getByRole("button", { name: /confirm/i }))
 
-    const confirmBtn = screen.getByRole("button", { name: /confirm/i })
-    await user.click(confirmBtn)
-
-    expect(screen.getByRole("button", { name: /confirming/i })).toBeDisabled()
+    expect(mockCompleteOrder).toHaveBeenCalledWith("order-1")
+    expect(mockUpdateOrderStatus).not.toHaveBeenCalled()
+    expect(mockSuccessToast).toHaveBeenCalled()
   })
 })
