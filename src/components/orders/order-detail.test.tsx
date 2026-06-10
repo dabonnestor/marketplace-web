@@ -149,8 +149,26 @@ describe("OrderDetail", () => {
     )
     expect(screen.getByText("$100.00")).toBeInTheDocument()
     expect(screen.getByText("$7.50")).toBeInTheDocument()
-    expect(screen.getByText("$5.00")).toBeInTheDocument()
     expect(screen.getByText("$112.50")).toBeInTheDocument()
+    // Platform fee should not be shown to buyer
+    expect(screen.queryByText("$5.00")).not.toBeInTheDocument()
+  })
+
+  it("renders price breakdown for seller with platform fee deduction", () => {
+    render(
+      <OrderDetail
+        order={makeOrder()}
+        listing={listing}
+        currentUserId="seller-1"
+      />
+    )
+    expect(screen.getByText("$100.00")).toBeInTheDocument()
+    // Platform fee shown as deduction
+    expect(screen.getByText("-$5.00")).toBeInTheDocument()
+    // Total = sellerPayout
+    expect(screen.getByText("$95.00")).toBeInTheDocument()
+    // Shipping should not be shown to seller
+    expect(screen.queryByText("$7.50")).not.toBeInTheDocument()
   })
 
   it("renders color-coded status badge", () => {

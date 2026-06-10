@@ -116,7 +116,7 @@ describe("ConfirmPurchase", () => {
   })
 
   describe("step 1", () => {
-    it("renders listing summary, platform fee note, and proceed button", () => {
+    it("renders listing summary and proceed button", () => {
       resetMocks()
       renderWithClient(
         <ConfirmPurchase listing={listing} currentUserId="buyer-99" />
@@ -124,7 +124,6 @@ describe("ConfirmPurchase", () => {
 
       expect(screen.getByText("Vintage Watch")).toBeInTheDocument()
       expect(screen.getByText("$100.00")).toBeInTheDocument()
-      expect(screen.getByText(/platform fee/i)).toBeInTheDocument()
       expect(
         screen.getByRole("button", { name: /proceed to payment/i })
       ).toBeInTheDocument()
@@ -170,7 +169,6 @@ describe("ConfirmPurchase", () => {
       expect(mockReplace).toHaveBeenCalledWith("?orderId=order-456")
       // Step 2: should show server-computed price breakdown
       expect(screen.getByText("$100.00")).toBeInTheDocument()
-      expect(screen.getByText("$10.00")).toBeInTheDocument()
       expect(screen.getByText("$117.50")).toBeInTheDocument()
       expect(screen.getByTestId("stripe-form")).toBeInTheDocument()
     })
@@ -280,7 +278,6 @@ describe("ConfirmPurchase", () => {
       expect(mockFetchOrder).toHaveBeenCalledWith("order-456")
       expect(await screen.findByTestId("stripe-form")).toBeInTheDocument()
       expect(screen.getByText("$100.00")).toBeInTheDocument()
-      expect(screen.getByText("$10.00")).toBeInTheDocument()
       expect(screen.getByText("$117.50")).toBeInTheDocument()
     })
 

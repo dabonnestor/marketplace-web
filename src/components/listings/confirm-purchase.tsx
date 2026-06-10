@@ -132,10 +132,6 @@ export function ConfirmPurchase({
               label="Shipping"
               amount={formatCurrency(order.shippingCost)}
             />
-            <PriceRow
-              label="Platform fee"
-              amount={formatCurrency(order.platformFee)}
-            />
             <Separator />
             <PriceRow label="Total" amount={formatCurrency(order.total)} bold />
           </CardContent>

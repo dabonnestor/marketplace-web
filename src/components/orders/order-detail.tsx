@@ -284,17 +284,27 @@ export function OrderDetail({
           <CardTitle>Order Summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <PriceRow label="Subtotal" amount={formatCurrency(order.subtotal)} />
-          <PriceRow
-            label="Shipping"
-            amount={formatCurrency(order.shippingCost)}
-          />
-          <PriceRow
-            label="Platform fee (10%)"
-            amount={formatCurrency(order.platformFee)}
-          />
-          <Separator />
-          <PriceRow label="Total" amount={formatCurrency(order.total)} bold />
+          {role === "seller" ? (
+            <>
+              <PriceRow label="Subtotal" amount={formatCurrency(order.subtotal)} />
+              <PriceRow
+                label="Platform fee"
+                amount={`-${formatCurrency(order.platformFee)}`}
+              />
+              <Separator />
+              <PriceRow label="Total" amount={formatCurrency(order.sellerPayout)} bold />
+            </>
+          ) : (
+            <>
+              <PriceRow label="Subtotal" amount={formatCurrency(order.subtotal)} />
+              <PriceRow
+                label="Shipping"
+                amount={formatCurrency(order.shippingCost)}
+              />
+              <Separator />
+              <PriceRow label="Total" amount={formatCurrency(order.total)} bold />
+            </>
+          )}
         </CardContent>
       </Card>
 
