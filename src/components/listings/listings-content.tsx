@@ -3,13 +3,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 import { fetchListings } from "@/actions/listings"
+import { CATEGORIES } from "@/lib/validations/listings"
 import { ListingCard } from "@/components/listings/listing-card"
 import { ListingFilters } from "@/components/listings/listing-filters"
 import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 
-const CATEGORIES = ["Electronics", "Clothing", "Home", "Sports", "Books"]
 
 export function ListingsContent() {
   const searchParams = useSearchParams()
