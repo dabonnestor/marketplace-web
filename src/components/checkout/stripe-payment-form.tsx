@@ -18,14 +18,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
 const stripeAppearance: StripeElementsOptions["appearance"] = {
-  theme: "none",
+  theme: "stripe",
   variables: {
     colorBackground: "#09090b",
     colorText: "#fafafa",
     colorPrimary: "#fafafa",
     colorDanger: "#ef4444",
     borderRadius: "0.75rem",
-    spacingUnit: "4px",
+    spacingUnit: "6px",
   },
   rules: {
     ".Input": {
@@ -112,22 +112,18 @@ function PaymentFormInner({ orderId, onSuccess }: StripePaymentFormProps) {
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-3">
-        <div className="mt-6">
-          <form onSubmit={handleSubmit}>
-            <PaymentElement />
-            <Button
-              type="submit"
-              disabled={!stripe || isProcessing}
-              className="w-full mt-2"
-            >
-              {isProcessing ? "Processing payment..." : `Pay`}
-            </Button>
-          </form>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="mt-6">
+      <form onSubmit={handleSubmit}>
+        <PaymentElement />
+        <Button
+          type="submit"
+          disabled={!stripe || isProcessing}
+          className="w-full mt-6"
+        >
+          {isProcessing ? "Processing payment..." : `Pay`}
+        </Button>
+      </form>
+    </div>
   )
 }
 
