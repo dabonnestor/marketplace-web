@@ -185,9 +185,6 @@ export function ConfirmPurchase({
             label="Shipping"
             amount={formatCurrency(listing.shippingCost)}
           />
-          <p className="text-sm text-muted-foreground">
-            10% platform fee will be added at checkout.
-          </p>
         </CardContent>
       </Card>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPurchases, fetchSales } from "@/actions/orders"
@@ -115,6 +115,7 @@ interface OrderListProps {
 export function OrderList({ role }: OrderListProps) {
   const cfg = CONFIG[role]
   const router = useRouter()
+  const queryClient = useQueryClient()
   const searchParams = useSearchParams()
 
   const page = Number(searchParams.get("page")) || 1
@@ -225,7 +226,10 @@ export function OrderList({ role }: OrderListProps) {
               key={order.id}
               role="button"
               tabIndex={0}
-              onClick={() => router.push(`/orders/${order.id}`)}
+              onClick={() => {
+                queryClient.removeQueries({ queryKey: ["order", order.id] })
+                router.push(`/orders/${order.id}`)
+              }}
               className="grid grid-cols-[64px_1fr_auto_auto_auto] items-center gap-4 lg:gap-6 rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
             >
               <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
