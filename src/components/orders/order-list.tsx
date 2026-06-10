@@ -21,7 +21,10 @@ const STATUSES = [
   "shipped",
   "delivered",
   "completed",
+  "disputed",
   "cancelled",
+  "expired",
+  "refunded",
 ] as const
 
 function formatDate(iso: string) {
