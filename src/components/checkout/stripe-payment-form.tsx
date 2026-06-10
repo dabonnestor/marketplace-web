@@ -94,6 +94,7 @@ function PaymentFormInner({ orderId, onSuccess }: StripePaymentFormProps) {
     },
     onSuccess: (result) => {
       if (result.success) {
+        toast.success("Payment successful!")
         onSuccess()
       } else {
         toast.error(result.error)

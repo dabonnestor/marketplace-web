@@ -16,9 +16,10 @@ function renderWithClient(ui: React.ReactElement) {
   })
 }
 
-const { mockConfirmPayment, mockErrorToast, mockPayOrder } = vi.hoisted(() => ({
+const { mockConfirmPayment, mockErrorToast, mockSuccessToast, mockPayOrder } = vi.hoisted(() => ({
   mockConfirmPayment: vi.fn(),
   mockErrorToast: vi.fn(),
+  mockSuccessToast: vi.fn(),
   mockPayOrder: vi.fn(),
 }))
 
@@ -38,7 +39,7 @@ vi.mock("@/actions/orders", () => ({
 }))
 
 vi.mock("sonner", () => ({
-  toast: { error: mockErrorToast },
+  toast: { error: mockErrorToast, success: mockSuccessToast },
 }))
 
 describe("StripePaymentForm", () => {
@@ -74,12 +75,13 @@ describe("StripePaymentForm", () => {
     ).toBeDisabled()
   })
 
-  it("calls confirmPayment then payOrder, and calls onSuccess on success", async () => {
+  it("calls confirmPayment then payOrder, shows success toast, and calls onSuccess on success", async () => {
     const user = userEvent.setup()
     const onSuccess = vi.fn()
 
     mockConfirmPayment.mockReset()
     mockPayOrder.mockReset()
+    mockSuccessToast.mockReset()
 
     mockConfirmPayment.mockResolvedValue({ error: null })
     mockPayOrder.mockResolvedValue({ success: true })
@@ -96,6 +98,7 @@ describe("StripePaymentForm", () => {
 
     expect(mockConfirmPayment).toHaveBeenCalled()
     expect(mockPayOrder).toHaveBeenCalledWith("order-1")
+    expect(mockSuccessToast).toHaveBeenCalledWith("Payment successful!")
     expect(onSuccess).toHaveBeenCalled()
   })
 
