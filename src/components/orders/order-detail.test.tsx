@@ -353,7 +353,7 @@ describe("OrderDetail Cancel button", () => {
 })
 
 describe("OrderDetail Refund button", () => {
-  it("buyer of paid order sees Refund Order button", () => {
+  it("buyer of paid order sees Request a Refund button", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "paid" })}
@@ -362,11 +362,11 @@ describe("OrderDetail Refund button", () => {
       />
     )
     expect(
-      screen.getByRole("button", { name: /refund order/i })
+      screen.getByRole("button", { name: /request a refund/i })
     ).toBeInTheDocument()
   })
 
-  it("buyer of shipped order sees Refund Order button", () => {
+  it("buyer of shipped order sees Request a Refund button", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "shipped" })}
@@ -375,11 +375,11 @@ describe("OrderDetail Refund button", () => {
       />
     )
     expect(
-      screen.getByRole("button", { name: /refund order/i })
+      screen.getByRole("button", { name: /request a refund/i })
     ).toBeInTheDocument()
   })
 
-  it("buyer of delivered order sees Refund Order button", () => {
+  it("buyer of delivered order sees Request a Refund button", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "delivered" })}
@@ -388,11 +388,11 @@ describe("OrderDetail Refund button", () => {
       />
     )
     expect(
-      screen.getByRole("button", { name: /refund order/i })
+      screen.getByRole("button", { name: /request a refund/i })
     ).toBeInTheDocument()
   })
 
-  it("buyer of pending order does not see Refund Order button", () => {
+  it("buyer of pending order does not see Request a Refund button", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "pending" })}
@@ -401,11 +401,11 @@ describe("OrderDetail Refund button", () => {
       />
     )
     expect(
-      screen.queryByRole("button", { name: /refund order/i })
+      screen.queryByRole("button", { name: /request a refund/i })
     ).not.toBeInTheDocument()
   })
 
-  it("seller does not see Refund Order button", () => {
+  it("seller does not see Request a Refund button", () => {
     render(
       <OrderDetail
         order={makeOrder({ status: "paid" })}
@@ -414,7 +414,7 @@ describe("OrderDetail Refund button", () => {
       />
     )
     expect(
-      screen.queryByRole("button", { name: /refund order/i })
+      screen.queryByRole("button", { name: /request a refund/i })
     ).not.toBeInTheDocument()
   })
 })
@@ -592,7 +592,7 @@ describe("OrderDetail Cancel confirmation dialog", () => {
 })
 
 describe("OrderDetail Refund confirmation dialog", () => {
-  it("opens confirmation dialog when Refund Order is clicked", async () => {
+  it("opens confirmation dialog when Request a Refund is clicked", async () => {
     const user = userEvent.setup()
     render(
       <OrderDetail
@@ -601,10 +601,10 @@ describe("OrderDetail Refund confirmation dialog", () => {
         currentUserId="buyer-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /refund order/i }))
+    await user.click(screen.getByRole("button", { name: /request a refund/i }))
     expect(screen.getByRole("dialog")).toBeInTheDocument()
     expect(
-      screen.getByText(/are you sure you want to refund this order\?/i)
+      screen.getByText(/are you sure you want to request a refund for this order\?/i)
     ).toBeInTheDocument()
   })
 
@@ -625,7 +625,7 @@ describe("OrderDetail Refund confirmation dialog", () => {
         currentUserId="buyer-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /refund order/i }))
+    await user.click(screen.getByRole("button", { name: /request a refund/i }))
     await user.click(screen.getByRole("button", { name: /confirm/i }))
 
     expect(mockRefundOrder).toHaveBeenCalledWith("order-1")
@@ -649,7 +649,7 @@ describe("OrderDetail Refund confirmation dialog", () => {
         currentUserId="buyer-1"
       />
     )
-    await user.click(screen.getByRole("button", { name: /refund order/i }))
+    await user.click(screen.getByRole("button", { name: /request a refund/i }))
     await user.click(screen.getByRole("button", { name: /confirm/i }))
 
     expect(mockErrorToast).toHaveBeenCalledWith("Cannot refund this order")

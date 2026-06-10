@@ -231,10 +231,10 @@ export function OrderDetail({
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ["purchases"] })
         queryClient.invalidateQueries({ queryKey: ["sales"] })
-        toast.success("Order refunded")
+        toast.success("Refund requested")
         queryClient.invalidateQueries({ queryKey: ["order", order.id] })
       } else {
-        toast.error(result.error || "Failed to refund order")
+        toast.error(result.error || "Failed to request refund")
       }
     },
   })
@@ -347,7 +347,7 @@ export function OrderDetail({
             onClick={() => setShowRefundConfirm(true)}
             className="w-full"
           >
-            Refund Order
+            Request a Refund
           </Button>
         </div>
       )}
@@ -420,9 +420,9 @@ export function OrderDetail({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Refund</DialogTitle>
+            <DialogTitle>Confirm Refund Request</DialogTitle>
             <DialogDescription>
-              Are you sure you want to refund this order?
+              Are you sure you want to request a refund for this order?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -433,7 +433,7 @@ export function OrderDetail({
               Cancel
             </Button>
             <Button onClick={() => handleRefund()} disabled={refundPending}>
-              {refundPending ? "Refunding..." : "Confirm"}
+              {refundPending ? "Requesting..." : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
