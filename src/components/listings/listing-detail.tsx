@@ -18,14 +18,11 @@ import {
 } from "@/components/ui/dialog"
 import { deleteListing } from "@/actions/listings"
 import type { Listing } from "@/lib/api/types"
+import dayjs from "dayjs"
 import { conditionBadgeClass, NoImage } from "@/lib/display-utils"
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
+  return dayjs(dateStr.split("T")[0]).format("MMMM D, YYYY")
 }
 
 function ActionButton({

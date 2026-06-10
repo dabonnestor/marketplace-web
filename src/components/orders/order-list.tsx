@@ -11,6 +11,7 @@ import { badgeClasses, NoImage } from "@/lib/display-utils"
 import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import dayjs from "dayjs"
 
 type Order = PurchaseOrder | SaleOrder
 type Role = "buyer" | "seller"
@@ -28,7 +29,7 @@ const STATUSES = [
 ] as const
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString()
+  return dayjs(iso.split("T")[0]).format("M/D/YYYY")
 }
 
 const CONFIG: Record<
