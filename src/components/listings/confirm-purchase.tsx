@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createOrder, fetchOrder } from "@/lib/api/actions"
+import { useAction } from "@/hooks/use-action"
 import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,18 +35,18 @@ export function ConfirmPurchase({
     }
   }, [currentUserId, listing.id, listing.status, router])
 
-  const { mutate: handleCreateOrder, isPending: isCreating } = useMutation({
-    mutationFn: () => createOrder(listing.id),
-    onSuccess: (result) => {
-      if (result.success && result.order) {
-        queryClient.invalidateQueries({ queryKey: ["purchases"] })
-        setOrder(result.order)
-        router.replace(`?orderId=${result.order.id}`)
-      } else {
-        toast.error(result.error || "Failed to create order")
-      }
+  const { mutate: handleCreateOrder, isPending: isCreating } = useAction(
+    () => createOrder(listing.id),
+    {
+      invalidateKeys: [["purchases"]],
+      onSuccess: (result) => {
+        if ("order" in result && result.order) {
+          setOrder(result.order)
+          router.replace(`?orderId=${result.order.id}`)
+        }
+      },
     },
-  })
+  )
 
   if (listing.status === "sold") {
     return (

@@ -11,9 +11,8 @@ import {
   type Stripe,
   type StripeElementsOptions,
 } from "@stripe/stripe-js"
-import { useMutation } from "@tanstack/react-query"
-import { toast } from "sonner"
 import { payOrder } from "@/lib/api/actions"
+import { useAction } from "@/hooks/use-action"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -76,8 +75,8 @@ function PaymentFormInner({ orderId, onSuccess }: StripePaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
 
-  const { mutate: doPayment, isPending: isProcessing } = useMutation({
-    mutationFn: async () => {
+  const { mutate: doPayment, isPending: isProcessing } = useAction(
+    async () => {
       const { error } = await stripe!.confirmPayment({
         elements: elements!,
         confirmParams: {
@@ -92,18 +91,13 @@ function PaymentFormInner({ orderId, onSuccess }: StripePaymentFormProps) {
 
       return payOrder(orderId)
     },
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success("Payment successful!")
+    {
+      successMessage: "Payment successful!",
+      onSuccess: () => {
         onSuccess()
-      } else {
-        toast.error(result.error)
-      }
+      },
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Payment failed")
-    },
-  })
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

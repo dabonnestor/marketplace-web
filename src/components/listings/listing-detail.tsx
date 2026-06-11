@@ -3,8 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { useAction } from "@/hooks/use-action"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -33,23 +32,21 @@ function ActionButton({
   currentUserId: string | null
 }) {
   const router = useRouter()
-  const queryClient = useQueryClient()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  const { mutate: handleDelete, isPending: isDeleting } = useMutation({
-    mutationFn: () => deleteListing(listing.id),
-    onSuccess: (result) => {
-      setShowDeleteDialog(false)
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["listings"] })
-        queryClient.invalidateQueries({ queryKey: ["my-listings"] })
-        toast.success("Listing deleted")
+  const { mutate: handleDelete, isPending: isDeleting } = useAction(
+    () => deleteListing(listing.id),
+    {
+      successMessage: "Listing deleted",
+      invalidateKeys: [["listings"], ["my-listings"]],
+      onSuccess: () => {
         router.push("/listings")
-      } else {
-        toast.error(result.error || "Failed to delete listing")
-      }
+      },
+      onSettled: () => {
+        setShowDeleteDialog(false)
+      },
     },
-  })
+  )
 
   if (currentUserId === null) {
     return (

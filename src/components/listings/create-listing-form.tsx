@@ -4,8 +4,7 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { useAction } from "@/hooks/use-action"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -90,10 +89,8 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
     else form.setError("title", { message })
   }
 
-  const queryClient = useQueryClient()
-
-  const { mutate: submitListing, isPending } = useMutation({
-    mutationFn: async (data: CreateListingInput) => {
+  const { mutate: submitListing, isPending } = useAction(
+    async (data: CreateListingInput) => {
       let newImageUrls: string[] = []
       if (selectedFiles.length > 0) {
         const formData = new FormData()
@@ -113,37 +110,33 @@ export function CreateListingForm({ listing }: CreateListingFormProps) {
       }
       return createListing(payload)
     },
-    onSuccess: (result) => {
-      if (result.success && "listing" in result && result.listing) {
-        queryClient.invalidateQueries({ queryKey: ["listings"] })
-        queryClient.invalidateQueries({ queryKey: ["my-listings"] })
-        toast.success(isEdit ? "Listing updated!" : "Listing created!")
-        router.push(`/listings/${result.listing.id}`)
-      } else {
-        const message = result.error || `Failed to ${isEdit ? "update" : "create"} listing`
+    {
+      successMessage: isEdit ? "Listing updated!" : "Listing created!",
+      invalidateKeys: [["listings"], ["my-listings"]],
+      onSuccess: (result) => {
+        if ("listing" in result && result.listing) {
+          router.push(`/listings/${result.listing.id}`)
+        }
+      },
+      onError: (message) => {
         setServerError(message)
-        toast.error(message)
-      }
+      },
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Something went wrong")
-    },
-  })
+  )
 
-  const { mutate: handleDelete, isPending: isDeleting } = useMutation({
-    mutationFn: () => deleteListing(listing!.id),
-    onSuccess: (result) => {
-      setShowDeleteDialog(false)
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["listings"] })
-        queryClient.invalidateQueries({ queryKey: ["my-listings"] })
-        toast.success("Listing deleted")
+  const { mutate: handleDelete, isPending: isDeleting } = useAction(
+    () => deleteListing(listing!.id),
+    {
+      successMessage: "Listing deleted",
+      invalidateKeys: [["listings"], ["my-listings"]],
+      onSuccess: () => {
         router.push("/listings")
-      } else {
-        toast.error(result.error || "Failed to delete listing")
-      }
+      },
+      onSettled: () => {
+        setShowDeleteDialog(false)
+      },
     },
-  })
+  )
 
   function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])

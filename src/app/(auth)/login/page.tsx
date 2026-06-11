@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -25,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { loginSchema, type LoginInput } from "@/lib/validations/auth"
 import { login } from "@/lib/api/actions"
 import { useAuthStore } from "@/stores/auth-store"
-import { toast } from "sonner"
+import { useAction } from "@/hooks/use-action"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -36,24 +35,25 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   })
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data: LoginInput) => login(data.email, data.password),
-    onSuccess: (result) => {
-      if (result.success && result.user) {
-        setUser(result.user)
-        toast.success("Welcome back!")
-        router.push("/")
-      } else {
-        const message = result.error || "Login failed"
+  const { mutate, isPending } = useAction(
+    (data: LoginInput) => login(data.email, data.password),
+    {
+      successMessage: "Welcome back!",
+      onSuccess: (result) => {
+        if ("user" in result && result.user) {
+          setUser(result.user)
+          router.push("/")
+        }
+      },
+      onError: (message) => {
         if (message.toLowerCase().includes("password")) {
           form.setError("password", { message })
         } else {
           form.setError("email", { message })
         }
-        toast.error(message)
-      }
+      },
     },
-  })
+  )
 
   function onSubmit(data: LoginInput) {
     mutate(data)

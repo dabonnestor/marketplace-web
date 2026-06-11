@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,19 +19,18 @@ import {
 } from "@/components/ui/sheet"
 import { useAuthStore } from "@/stores/auth-store"
 import { logout } from "@/lib/api/actions"
+import { useAction } from "@/hooks/use-action"
 import { Menu, Package, Plus, User } from "lucide-react"
-import { toast } from "sonner"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Navbar() {
   const { user, isLoading } = useAuthStore()
   const router = useRouter()
 
-  const { mutate: handleLogout } = useMutation({
-    mutationFn: () => logout(),
+  const { mutate: handleLogout } = useAction(() => logout(), {
+    successMessage: "Signed out",
     onSuccess: () => {
       useAuthStore.getState().setUser(null)
-      toast.success("Signed out")
       router.push("/")
     },
   })

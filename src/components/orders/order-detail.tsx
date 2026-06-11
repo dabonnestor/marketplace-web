@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import type { QueryKey } from "@tanstack/react-query"
+import { useAction } from "@/hooks/use-action"
 import {
   fetchOrder,
   updateOrderStatus,
@@ -91,8 +92,14 @@ export function OrderDetail({
   const canCompletePayment =
     role === "buyer" && order.status === "pending" && !!order.clientSecret
 
-  const { mutate: handleAction, isPending } = useMutation({
-    mutationFn: async (status: OrderStatus) => {
+  const orderQueryKeys: QueryKey[] = [
+    ["purchases"],
+    ["sales"],
+    ["order", order.id],
+  ]
+
+  const { mutate: handleAction, isPending } = useAction(
+    async (status: OrderStatus) => {
       if (status === "completed") {
         return completeOrder(order.id)
       }
@@ -100,48 +107,31 @@ export function OrderDetail({
         status,
       } as OrderStatusTransition)
     },
-    onSuccess: (result, status) => {
-      setTargetStatus(null)
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["purchases"] })
-        queryClient.invalidateQueries({ queryKey: ["sales"] })
-        toast.success(`Order marked as ${statusLabel(status)}`)
-        queryClient.invalidateQueries({ queryKey: ["order", order.id] })
-      } else {
-        toast.error(result.error || "Failed to update order status")
-      }
+    {
+      successMessage: (_result, status) =>
+        `Order marked as ${statusLabel(status)}`,
+      invalidateKeys: orderQueryKeys,
+      onSettled: () => setTargetStatus(null),
     },
-  })
+  )
 
-  const { mutate: handleCancel, isPending: cancelPending } = useMutation({
-    mutationFn: () => cancelOrder(order.id),
-    onSuccess: (result) => {
-      setShowCancelConfirm(false)
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["purchases"] })
-        queryClient.invalidateQueries({ queryKey: ["sales"] })
-        toast.success("Order cancelled")
-        queryClient.invalidateQueries({ queryKey: ["order", order.id] })
-      } else {
-        toast.error(result.error || "Failed to cancel order")
-      }
+  const { mutate: handleCancel, isPending: cancelPending } = useAction(
+    () => cancelOrder(order.id),
+    {
+      successMessage: "Order cancelled",
+      invalidateKeys: orderQueryKeys,
+      onSettled: () => setShowCancelConfirm(false),
     },
-  })
+  )
 
-  const { mutate: handleRefund, isPending: refundPending } = useMutation({
-    mutationFn: () => refundOrder(order.id),
-    onSuccess: (result) => {
-      setShowRefundConfirm(false)
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["purchases"] })
-        queryClient.invalidateQueries({ queryKey: ["sales"] })
-        toast.success("Refund requested")
-        queryClient.invalidateQueries({ queryKey: ["order", order.id] })
-      } else {
-        toast.error(result.error || "Failed to request refund")
-      }
+  const { mutate: handleRefund, isPending: refundPending } = useAction(
+    () => refundOrder(order.id),
+    {
+      successMessage: "Refund requested",
+      invalidateKeys: orderQueryKeys,
+      onSettled: () => setShowRefundConfirm(false),
     },
-  })
+  )
 
   const badgeColor = statusColor(order.status)
 

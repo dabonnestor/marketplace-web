@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -25,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth"
 import { register } from "@/lib/api/actions"
 import { useAuthStore } from "@/stores/auth-store"
-import { toast } from "sonner"
+import { useAction } from "@/hooks/use-action"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -36,16 +35,18 @@ export default function RegisterPage() {
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   })
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data: RegisterInput) =>
+  const { mutate, isPending } = useAction(
+    (data: RegisterInput) =>
       register(data.email, data.password, data.name),
-    onSuccess: (result) => {
-      if (result.success && result.user) {
-        setUser(result.user)
-        toast.success("Account created!")
-        router.push("/")
-      } else {
-        const message = result.error || "Registration failed"
+    {
+      successMessage: "Account created!",
+      onSuccess: (result) => {
+        if ("user" in result && result.user) {
+          setUser(result.user)
+          router.push("/")
+        }
+      },
+      onError: (message) => {
         if (message.toLowerCase().includes("password")) {
           form.setError("password", { message })
         } else if (message.toLowerCase().includes("email")) {
@@ -53,10 +54,9 @@ export default function RegisterPage() {
         } else {
           form.setError("email", { message })
         }
-        toast.error(message)
-      }
+      },
     },
-  })
+  )
 
   function onSubmit(data: RegisterInput) {
     mutate(data)
