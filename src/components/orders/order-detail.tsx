@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Fragment } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -12,103 +12,26 @@ import {
   completeOrder,
   refundOrder,
 } from "@/lib/api/actions"
-import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
 import {
   getValidTransitions,
   statusColor,
   statusLabel,
 } from "@/lib/order-utils"
 import { cn } from "@/lib/utils"
-import { formatCurrency, badgeClasses, NoImage } from "@/lib/display-utils"
-import { PriceRow } from "@/components/ui/price-row"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { badgeClasses, NoImage } from "@/lib/display-utils"
+import { StatusProgress } from "./status-progress"
+import { OrderSummary } from "./order-summary"
+import { CancelDialog } from "./cancel-dialog"
+import { RefundDialog } from "./refund-dialog"
+import { StatusTransitionDialog } from "./status-transition-dialog"
+import { PaymentFallback } from "./payment-fallback"
+import { OrderActions } from "./order-actions"
 import type {
   Order,
   Listing,
   OrderStatus,
   OrderStatusTransition,
 } from "@/lib/api/types"
-
-const STATUS_STEPS: OrderStatus[] = [
-  "pending",
-  "paid",
-  "shipped",
-  "delivered",
-  "completed",
-]
-
-function actionLabel(status: OrderStatus): string {
-  switch (status) {
-    case "paid":
-      return "Mark as Paid"
-    case "shipped":
-      return "Mark as Shipped"
-    case "delivered":
-      return "Mark as Delivered"
-    case "completed":
-      return "Mark as Completed"
-    default:
-      return `Mark as ${statusLabel(status)}`
-  }
-}
-
-function StatusProgress({ status }: { status: OrderStatus }) {
-  const currentIdx = STATUS_STEPS.indexOf(status)
-  const isTerminal = currentIdx === -1
-
-  return (
-    <div className="flex items-center gap-1">
-      {STATUS_STEPS.map((step, i) => {
-        const isReached = !isTerminal && i <= currentIdx
-        const isCurrent = i === currentIdx
-        const isFuture = !isReached
-
-        return (
-          <Fragment key={step}>
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
-                  isReached && "bg-green-500 text-white",
-                  isFuture && "bg-muted text-muted-foreground",
-                )}
-              >
-                {isReached ? "✓" : i + 1}
-              </div>
-              <span
-                className={cn(
-                  "text-xs whitespace-nowrap",
-                  isReached && "text-green-600 font-semibold",
-                  isFuture && "text-muted-foreground",
-                )}
-              >
-                {statusLabel(step)}
-              </span>
-            </div>
-            {i < STATUS_STEPS.length - 1 && (
-              <div
-                className={cn(
-                  "h-px flex-1 mt-[-1.25rem]",
-                  !isTerminal && i < currentIdx ? "bg-green-500" : "bg-border",
-                )}
-              />
-            )}
-          </Fragment>
-        )
-      })}
-    </div>
-  )
-}
 
 interface OrderDetailProps {
   order: Order
@@ -143,7 +66,6 @@ export function OrderDetail({
   const [targetStatus, setTargetStatus] = useState<OrderStatus | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showRefundConfirm, setShowRefundConfirm] = useState(false)
-  const [showPaymentForm, setShowPaymentForm] = useState(false)
 
   useEffect(() => {
     if (currentUserId === null) {
@@ -261,175 +183,52 @@ export function OrderDetail({
 
       <StatusProgress status={order.status} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Order Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {role === "seller" ? (
-            <>
-              <PriceRow label="Subtotal" amount={formatCurrency(order.subtotal)} />
-              <PriceRow
-                label="Platform fee"
-                amount={`-${formatCurrency(order.platformFee)}`}
-              />
-              <Separator />
-              <PriceRow label="Total" amount={formatCurrency(order.sellerPayout)} bold />
-            </>
-          ) : (
-            <>
-              <PriceRow label="Subtotal" amount={formatCurrency(order.subtotal)} />
-              <PriceRow
-                label="Shipping"
-                amount={formatCurrency(order.shippingCost)}
-              />
-              <Separator />
-              <PriceRow label="Total" amount={formatCurrency(order.total)} bold />
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <OrderSummary order={order} role={role} />
 
-      {validTransitions.length > 0 && (
-        <div className="space-y-2">
-          {validTransitions.map((s) => (
-            <Button
-              key={s}
-              onClick={() => setTargetStatus(s)}
-              className="w-full"
-            >
-              {actionLabel(s)}
-            </Button>
-          ))}
-        </div>
-      )}
+      <OrderActions
+        validTransitions={validTransitions}
+        canCancel={canCancel}
+        canRefund={canRefund}
+        onAction={setTargetStatus}
+        onCancel={() => setShowCancelConfirm(true)}
+        onRefund={() => setShowRefundConfirm(true)}
+      />
 
-      {canCompletePayment && !showPaymentForm && (
-        <div className="space-y-2">
-          <Button onClick={() => setShowPaymentForm(true)} className="w-full">
-            Complete Payment
-          </Button>
-        </div>
-      )}
-
-      {canCompletePayment && showPaymentForm && (
-        <StripePaymentForm
+      {canCompletePayment && (
+        <PaymentFallback
           clientSecret={order.clientSecret!}
           orderId={order.id}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["order", order.id] })}
         />
       )}
 
-      {canCancel && (
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowCancelConfirm(true)}
-            className="w-full"
-          >
-            Cancel Order
-          </Button>
-        </div>
-      )}
-
-      {canRefund && (
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowRefundConfirm(true)}
-            className="w-full"
-          >
-            Request a Refund
-          </Button>
-        </div>
-      )}
-
-      <Dialog
+      <StatusTransitionDialog
         open={!!targetStatus}
+        targetStatus={targetStatus}
         onOpenChange={(open) => {
           if (!open) setTargetStatus(null)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Action</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to mark this order as{" "}
-              {targetStatus?.toLowerCase()}?
-              {targetStatus === "completed" && (
-                <span className="block mt-1 font-medium">
-                  This transfers payment to the seller
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTargetStatus(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => targetStatus && handleAction(targetStatus)}
-              disabled={isPending}
-            >
-              {isPending ? "Confirming..." : "Confirm"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={(status) => handleAction(status)}
+        isPending={isPending}
+      />
 
-      <Dialog
+      <CancelDialog
         open={showCancelConfirm}
         onOpenChange={(open) => {
           if (!open) setShowCancelConfirm(false)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Cancellation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this order?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCancelConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => handleCancel()} disabled={cancelPending}>
-              {cancelPending ? "Cancelling..." : "Confirm"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={() => handleCancel()}
+        isPending={cancelPending}
+      />
 
-      <Dialog
+      <RefundDialog
         open={showRefundConfirm}
         onOpenChange={(open) => {
           if (!open) setShowRefundConfirm(false)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Refund Request</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to request a refund for this order?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowRefundConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => handleRefund()} disabled={refundPending}>
-              {refundPending ? "Requesting..." : "Confirm"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onConfirm={() => handleRefund()}
+        isPending={refundPending}
+      />
     </div>
   )
 }
