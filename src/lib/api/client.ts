@@ -1,6 +1,5 @@
 import type {
   AuthResponse,
-  RefreshResponse,
   User,
   Listing,
   PaginatedResponse,
@@ -15,6 +14,7 @@ import type {
   ApiError,
 } from "./types"
 import { type TokenStore, CookieTokenStore } from "./token-store"
+import { refreshTokens as doRefresh } from "./refresh-tokens"
 
 const API_BASE = process.env.API_BASE_URL || "http://localhost:8080"
 
@@ -26,20 +26,14 @@ async function refreshTokens(
   const refreshToken = await tokenStore.getRefreshToken()
   if (!refreshToken) return null
 
-  const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  })
-
-  if (!res.ok) {
+  const result = await doRefresh(refreshToken)
+  if (!result) {
     await tokenStore.clearTokens()
     return null
   }
 
-  const data: RefreshResponse = await res.json()
-  await tokenStore.setTokens(data.accessToken, data.refreshToken)
-  return data.accessToken
+  await tokenStore.setTokens(result.accessToken, result.refreshToken)
+  return result.accessToken
 }
 
 async function apiFetch<T>(
