@@ -198,7 +198,7 @@ describe.each([
   })
 
   it("shows loading skeleton while fetching", () => {
-    vi.mocked(mockFetcher()).mockReturnValueOnce(new Promise(() => {}))
+    ;(vi.mocked(mockFetcher()) as any).mockReturnValueOnce(new Promise(() => {}))
 
     render(<OrderList role={role} />, { wrapper })
 

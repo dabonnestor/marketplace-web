@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export function ListingFilters({ categories }: { categories: string[] }) {
+export function ListingFilters({ categories }: { categories: readonly string[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 

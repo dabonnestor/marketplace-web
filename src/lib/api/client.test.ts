@@ -398,8 +398,10 @@ describe("server-action wrapped exports", () => {
       const result = await fetchListings({ page: 1 })
 
       expect(result.success).toBe(true)
-      expect(result.data).toEqual(paginated.data)
-      expect(result.pagination).toEqual(paginated.pagination)
+      if (result.success) {
+        expect(result.data).toEqual(paginated.data)
+        expect(result.pagination).toEqual(paginated.pagination)
+      }
     })
   })
 

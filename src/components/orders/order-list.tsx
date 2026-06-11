@@ -16,6 +16,12 @@ import dayjs from "dayjs"
 type Order = PurchaseOrder | SaleOrder
 type Role = "buyer" | "seller"
 
+function counterpartyName(order: Order, role: Role): string {
+  return role === "buyer"
+    ? (order as PurchaseOrder).sellerName
+    : (order as SaleOrder).buyerName
+}
+
 const STATUSES = [
   "pending",
   "paid",
@@ -36,9 +42,8 @@ const CONFIG: Record<
   Role,
   {
     queryKey: string
-    fetcher: typeof fetchPurchases
+    fetcher: (params?: { page?: number; limit?: number; status?: string }) => Promise<any>
     baseUrl: string
-    counterpartyField: "sellerName" | "buyerName"
     loadingLabel: string
     errorMessage: string
     emptyMessage: string
@@ -50,7 +55,6 @@ const CONFIG: Record<
     queryKey: "purchases",
     fetcher: fetchPurchases,
     baseUrl: "/dashboard/purchases",
-    counterpartyField: "sellerName",
     loadingLabel: "Loading purchases",
     errorMessage: "Failed to load purchases",
     emptyMessage: "No purchases yet — start browsing!",
@@ -61,7 +65,6 @@ const CONFIG: Record<
     queryKey: "sales",
     fetcher: fetchSales,
     baseUrl: "/dashboard/sales",
-    counterpartyField: "buyerName",
     loadingLabel: "Loading sales",
     errorMessage: "Failed to load sales",
     emptyMessage: "No sales yet — create a listing to get started!",
@@ -246,7 +249,7 @@ export function OrderList({ role }: OrderListProps) {
               <div className="min-w-0">
                 <p className="truncate font-medium">{order.listingTitle}</p>
                 <p className="text-sm text-muted-foreground">
-                  {order[cfg.counterpartyField]}
+                  {counterpartyName(order, role)}
                 </p>
               </div>
               <p className="font-medium tabular-nums w-20 text-right">

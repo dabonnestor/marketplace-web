@@ -80,6 +80,7 @@ vi.mock("@/components/checkout/stripe-payment-form", () => ({
 const listing: Listing = {
   id: "listing-1",
   sellerId: "seller-1",
+  sellerName: "Alice",
   title: "Vintage Watch",
   description: "A beautiful vintage watch",
   price: "100.00",
