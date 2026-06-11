@@ -40,9 +40,9 @@ vi.mock("sonner", () => ({
 vi.mock("@/stores/auth-store", () => ({
   useAuthStore: (selector?: (state: unknown) => unknown) => {
     if (selector) {
-      return selector({ user: null, setUser: mockSetUser, isLoading: false })
+      return selector({ user: null, setUser: mockSetUser, ready: true })
     }
-    return { user: null, setUser: mockSetUser, isLoading: false }
+    return { user: null, setUser: mockSetUser, ready: true }
   },
 }))
 

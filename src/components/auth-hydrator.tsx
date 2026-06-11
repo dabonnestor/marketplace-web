@@ -5,11 +5,11 @@ import { getCurrentUser } from "@/lib/api/actions"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function AuthHydrator() {
-  const setUser = useAuthStore((s) => s.setUser)
+  const hydrate = useAuthStore((s) => s.hydrate)
 
   useEffect(() => {
-    getCurrentUser().then(setUser)
-  }, [setUser])
+    getCurrentUser().then(hydrate)
+  }, [hydrate])
 
   return null
 }

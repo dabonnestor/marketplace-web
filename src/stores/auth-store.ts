@@ -5,14 +5,14 @@ import type { User } from "@/lib/api/types"
 
 interface AuthState {
   user: User | null
-  isLoading: boolean
+  ready: boolean
   setUser: (user: User | null) => void
-  setLoading: (loading: boolean) => void
+  hydrate: (user: User | null) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isLoading: true,
-  setUser: (user) => set({ user, isLoading: false }),
-  setLoading: (isLoading) => set({ isLoading }),
+  ready: false,
+  setUser: (user) => set({ user }),
+  hydrate: (user) => set({ user, ready: true }),
 }))

@@ -24,7 +24,7 @@ import { Menu, Package, Plus, User } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Navbar() {
-  const { user, isLoading } = useAuthStore()
+  const { user, ready } = useAuthStore()
   const router = useRouter()
 
   const { mutate: handleLogout } = useAction(() => logout(), {
@@ -54,109 +54,105 @@ export function Navbar() {
         {/* Mobile: hamburger + theme */}
         <div className="flex items-center gap-3 md:hidden">
           <ThemeToggle />
-          {!isLoading && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Menu">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <SheetHeader>
-                  <SheetTitle>
-                    {user ? user.name : "Menu"}
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col gap-1 mt-4">
-                  {user ? (
-                    <>
-                      <Button variant="outline" asChild className="justify-start">
-                        <Link href="/listings/new">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Sell
-                        </Link>
-                      </Button>
-                      {navLinks.map((link) => (
-                        <Button
-                          key={link.href}
-                          variant="ghost"
-                          asChild
-                          className="justify-start"
-                        >
-                          <Link href={link.href}>{link.label}</Link>
-                        </Button>
-                      ))}
+          {ready && <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <SheetHeader>
+                <SheetTitle>
+                  {user ? user.name : "Menu"}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-1 mt-4">
+                {user ? (
+                  <>
+                    <Button variant="outline" asChild className="justify-start">
+                      <Link href="/listings/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Sell
+                      </Link>
+                    </Button>
+                    {navLinks.map((link) => (
                       <Button
+                        key={link.href}
                         variant="ghost"
+                        asChild
                         className="justify-start"
-                        onClick={() => handleLogout()}
                       >
-                        Sign Out
+                        <Link href={link.href}>{link.label}</Link>
                       </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button variant="ghost" asChild className="justify-start">
-                        <Link href="/login">Sign In</Link>
-                      </Button>
-                      <Button asChild className="justify-start">
-                        <Link href="/register">Sign Up</Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
+                    ))}
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => handleLogout()}
+                    >
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" asChild className="justify-start">
+                      <Link href="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild className="justify-start">
+                      <Link href="/register">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>}
         </div>
 
         {/* Desktop: full nav */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
 
-          {!isLoading && (
-            user ? (
-              <>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/listings/new">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Sell
-                  </Link>
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <User className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <div className="px-2 py-1.5 text-sm font-medium truncate">
-                      {user.name}
-                    </div>
-                    <DropdownMenuSeparator />
-                    {navLinks.map((link) => (
-                      <DropdownMenuItem key={link.href} asChild>
-                        <Link href={link.href}>{link.label}</Link>
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleLogout()}>
-                      Sign Out
+          {ready && (user ? (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/listings/new">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Sell
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5 text-sm font-medium truncate">
+                    {user.name}
+                  </div>
+                  <DropdownMenuSeparator />
+                  {navLinks.map((link) => (
+                    <DropdownMenuItem key={link.href} asChild>
+                      <Link href={link.href}>{link.label}</Link>
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/login">Sign In</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/register">Sign Up</Link>
-                </Button>
-              </div>
-            )
-          )}
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleLogout()}>
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/register">Sign Up</Link>
+              </Button>
+            </div>
+          ))}
         </div>
       </div>
     </header>

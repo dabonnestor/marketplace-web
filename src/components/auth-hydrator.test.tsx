@@ -10,7 +10,7 @@ vi.mock("@/lib/api/actions", () => ({
 import { getCurrentUser } from "@/lib/api/actions"
 
 function resetStore() {
-  useAuthStore.setState({ user: null, isLoading: true })
+  useAuthStore.setState({ user: null, ready: false })
 }
 
 describe("AuthHydrator", () => {
@@ -33,11 +33,11 @@ describe("AuthHydrator", () => {
     await waitFor(() => {
       const state = useAuthStore.getState()
       expect(state.user).toEqual(user)
-      expect(state.isLoading).toBe(false)
+      expect(state.ready).toBe(true)
     })
   })
 
-  it("sets user: null and isLoading: false when getCurrentUser returns null", async () => {
+  it("sets user: null and ready: true when getCurrentUser returns null", async () => {
     vi.mocked(getCurrentUser).mockResolvedValueOnce(null)
 
     render(<AuthHydrator />)
@@ -45,7 +45,7 @@ describe("AuthHydrator", () => {
     await waitFor(() => {
       const state = useAuthStore.getState()
       expect(state.user).toBeNull()
-      expect(state.isLoading).toBe(false)
+      expect(state.ready).toBe(true)
     })
   })
 

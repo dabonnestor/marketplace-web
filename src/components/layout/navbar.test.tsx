@@ -27,18 +27,18 @@ const {
 } = vi.hoisted(() => {
   const mockGetState = vi.fn()
   const useAuthStoreMock = Object.assign(
-    (selector?: (state: { user: { name: string } | null; setUser: (u: null) => void; isLoading: boolean }) => unknown) => {
+    (selector?: (state: { user: { name: string } | null; setUser: (u: null) => void; ready: boolean }) => unknown) => {
       if (selector) {
         return selector({
           user: { name: "Test User" },
           setUser: mockSetUser,
-          isLoading: false,
+          ready: true,
         })
       }
       return {
         user: { name: "Test User" },
         setUser: mockSetUser,
-        isLoading: false,
+        ready: true,
       }
     },
     { getState: mockGetState }
