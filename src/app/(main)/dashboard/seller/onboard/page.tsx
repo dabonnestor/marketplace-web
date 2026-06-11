@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { getOnboardStatus, onboardSeller } from "@/actions/seller"
+import { getOnboardStatus, onboardSeller } from "@/lib/api/actions"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 

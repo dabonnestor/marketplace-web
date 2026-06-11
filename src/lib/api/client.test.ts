@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { createApiClient, ApiRequestError } from "./client"
+import { createApiClient, ApiRequestError, __setClientForTest, getClient, withErrorBoundary } from "./client"
+import { fetchListing, fetchListings, login, getCurrentUser, logout } from "./actions"
 import { MemoryTokenStore } from "./token-store"
 import type { TokenStore } from "./token-store"
 
@@ -340,5 +341,129 @@ describe("endpoint contracts", () => {
     await client.refundOrder("o1")
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE}/api/v1/orders/o1/refund`)
     expect(fetchMock.mock.calls[0][1]?.method).toBe("POST")
+  })
+})
+
+// ── Server-action wrapper exports ──
+
+describe("server-action wrapped exports", () => {
+  let store: MemoryTokenStore
+  let client: ReturnType<typeof createApiClient>
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    store = new MemoryTokenStore()
+    client = createApiClient(store as TokenStore)
+    __setClientForTest(client)
+  })
+
+  describe("fetchListing", () => {
+    it("returns { success: true, listing } on success", async () => {
+      const listing = { id: "123", title: "Test Listing", description: "Desc", price: 50, category: "Electronics", condition: "new", images: [], sellerId: "s1", createdAt: "2025-01-01", updatedAt: "2025-01-01" }
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(listing))
+
+      const result = await fetchListing("123")
+
+      expect(result).toEqual({ success: true, listing })
+    })
+
+    it("returns { success: false, error } on failure", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ error: { code: "NOT_FOUND", message: "Listing not found" } }), { status: 404 })
+      )
+
+      const result = await fetchListing("nonexistent")
+
+      expect(result).toEqual({ success: false, error: "Listing not found" })
+    })
+
+    it("uses fallback error message when error body has no message", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({}), { status: 500 })
+      )
+
+      const result = await fetchListing("123")
+
+      expect(result.success).toBe(false)
+      // ApiRequestError.message is "Request failed" (apiFetch's fallback)
+      expect(result.error).toBe("Request failed")
+    })
+  })
+
+  describe("fetchListings", () => {
+    it("returns { success: true, ...paginatedResult } on success", async () => {
+      const paginated = { data: [{ id: "1", title: "Item" }], pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } }
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(paginated))
+
+      const result = await fetchListings({ page: 1 })
+
+      expect(result.success).toBe(true)
+      expect(result.data).toEqual(paginated.data)
+      expect(result.pagination).toEqual(paginated.pagination)
+    })
+  })
+
+  describe("login", () => {
+    it("returns { success: true, user } on successful login", async () => {
+      const user = { id: "u1", email: "a@b.com", name: "Alice", createdAt: "2025-01-01" }
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({
+        user,
+        accessToken: "at",
+        refreshToken: "rt",
+      }))
+
+      const result = await login("a@b.com", "password")
+
+      expect(result).toEqual({ success: true, user })
+      expect(await store.getAccessToken()).toBe("at")
+    })
+
+    it("returns { success: false, error } on failed login", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Invalid credentials" } }), { status: 401 })
+      )
+
+      const result = await login("a@b.com", "wrong")
+
+      expect(result).toEqual({ success: false, error: "Invalid credentials" })
+    })
+  })
+
+  describe("getCurrentUser", () => {
+    it("returns user object when authenticated", async () => {
+      const user = { id: "u1", email: "a@b.com", name: "Alice", createdAt: "2025-01-01" }
+      await store.setTokens("at", "rt")
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(user))
+
+      const result = await getCurrentUser()
+
+      expect(result).toEqual(user)
+    })
+
+    it("returns null when no token is stored", async () => {
+      const result = await getCurrentUser()
+
+      expect(result).toBeNull()
+    })
+
+    it("returns null when API call fails", async () => {
+      await store.setTokens("at", "rt")
+      vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network error"))
+
+      const result = await getCurrentUser()
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe("logout", () => {
+    it("clears tokens", async () => {
+      await store.setTokens("at", "rt")
+
+      await logout()
+
+      expect(await store.getAccessToken()).toBeNull()
+      expect(await store.getRefreshToken()).toBeNull()
+    })
   })
 })

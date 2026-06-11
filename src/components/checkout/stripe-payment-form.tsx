@@ -13,7 +13,7 @@ import {
 } from "@stripe/stripe-js"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { payOrder } from "@/actions/orders"
+import { payOrder } from "@/lib/api/actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 

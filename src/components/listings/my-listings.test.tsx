@@ -7,7 +7,7 @@ const { mockPush } = vi.hoisted(() => ({
   mockPush: vi.fn(),
 }))
 
-vi.mock("@/actions/listings", () => ({
+vi.mock("@/lib/api/actions", () => ({
   fetchMyListings: vi.fn(),
 }))
 
@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
-import { fetchMyListings } from "@/actions/listings"
+import { fetchMyListings } from "@/lib/api/actions"
 import { MyListings } from "@/components/listings/my-listings"
 
 function makeListing(overrides: Partial<Listing> = {}): Listing {

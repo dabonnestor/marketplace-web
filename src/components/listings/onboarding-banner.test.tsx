@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
-vi.mock("@/actions/seller", () => ({
+vi.mock("@/lib/api/actions", () => ({
   getOnboardStatus: vi.fn(),
   onboardSeller: vi.fn(),
 }))
@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
-import { getOnboardStatus, onboardSeller } from "@/actions/seller"
+import { getOnboardStatus, onboardSeller } from "@/lib/api/actions"
 import { OnboardingBanner } from "@/components/listings/onboarding-banner"
 
 function wrapper({ children }: { children: React.ReactNode }) {

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
-import { fetchListings } from "@/actions/listings"
+import { fetchListings } from "@/lib/api/actions"
 import { CATEGORIES } from "@/lib/validations/listings"
 import { ListingCard } from "@/components/listings/listing-card"
 import { ListingFilters } from "@/components/listings/listing-filters"

@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { deleteListing } from "@/actions/listings"
+import { deleteListing } from "@/lib/api/actions"
 import type { Listing } from "@/lib/api/types"
 import dayjs from "dayjs"
 import { conditionBadgeClass, NoImage } from "@/lib/display-utils"

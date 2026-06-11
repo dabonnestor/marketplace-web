@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { getOrder, getListing, ApiRequestError } from "@/lib/api/client"
-import { getCurrentUser } from "@/actions/auth"
+import { getCurrentUser } from "@/lib/api/actions"
 import { OrderDetail } from "@/components/orders/order-detail"
 
 type Props = {

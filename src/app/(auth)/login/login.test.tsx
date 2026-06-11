@@ -29,7 +29,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-vi.mock("@/actions/auth", () => ({
+vi.mock("@/lib/api/actions", () => ({
   login: mockLogin,
 }))
 

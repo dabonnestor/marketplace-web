@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation } from "@tanstack/react-query"
-import { getOnboardStatus, onboardSeller } from "@/actions/seller"
+import { getOnboardStatus, onboardSeller } from "@/lib/api/actions"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 

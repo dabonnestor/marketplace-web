@@ -34,7 +34,7 @@ vi.mock("@stripe/stripe-js", () => ({
   loadStripe: () => ({}),
 }))
 
-vi.mock("@/actions/orders", () => ({
+vi.mock("@/lib/api/actions", () => ({
   payOrder: mockPayOrder,
 }))
 

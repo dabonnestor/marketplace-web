@@ -20,11 +20,6 @@ const API_BASE = process.env.API_BASE_URL || "http://localhost:8080"
 
 let _client: ReturnType<typeof createApiClient> | null = null
 
-function getClient(): ReturnType<typeof createApiClient> {
-  if (!_client) _client = createApiClient(new CookieTokenStore())
-  return _client
-}
-
 async function refreshTokens(
   tokenStore: TokenStore
 ): Promise<string | null> {
@@ -302,24 +297,46 @@ export function createApiClient(tokenStore: TokenStore) {
   }
 }
 
-// Auth
-export async function login(email: string, password: string) {
-  return getClient().login(email, password)
+// ── Test-only client override ──
+
+let _clientOverride: ReturnType<typeof createApiClient> | null = null
+
+export function __setClientForTest(c: ReturnType<typeof createApiClient> | null) {
+  _clientOverride = c
 }
 
-export async function register(email: string, password: string, name: string) {
-  return getClient().register(email, password, name)
+export function getClient(): ReturnType<typeof createApiClient> {
+  if (_clientOverride) return _clientOverride
+  if (!_client) _client = createApiClient(new CookieTokenStore())
+  return _client
 }
+
+// ── Error-boundary helper ──
+
+type ActionOk<T extends Record<string, unknown>> = T & { success: true; error?: undefined }
+type ActionErr = { success: false; error: string }
+
+export async function withErrorBoundary<T extends Record<string, unknown>>(
+  fn: () => Promise<T>,
+  fallbackError: string
+): Promise<ActionOk<T> | ActionErr> {
+  try {
+    const data = await fn()
+    return { success: true as const, ...data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : fallbackError,
+    }
+  }
+}
+
+// ── Raw data-fetching (for RSC pages — throw on error) ──
 
 export async function getMe() {
   return getClient().getMe()
 }
 
-export async function logout() {
-  return getClient().logout()
-}
-
-// Listings
 export async function getListings(params?: {
   page?: number
   limit?: number
@@ -335,25 +352,8 @@ export async function getListing(id: string) {
   return getClient().getListing(id)
 }
 
-export async function createListing(input: CreateListingInput) {
-  return getClient().createListing(input)
-}
-
-export async function updateListing(id: string, input: UpdateListingInput) {
-  return getClient().updateListing(id, input)
-}
-
-export async function deleteListing(id: string) {
-  return getClient().deleteListing(id)
-}
-
 export async function getMyListings(params?: { page?: number; limit?: number }) {
   return getClient().getMyListings(params)
-}
-
-// Orders
-export async function createOrder(listingId: string) {
-  return getClient().createOrder(listingId)
 }
 
 export async function getOrder(id: string) {
@@ -376,34 +376,3 @@ export async function getSales(params?: {
   return getClient().getSales(params)
 }
 
-export async function updateOrderStatus(
-  id: string,
-  input: OrderStatusTransition
-) {
-  return getClient().updateOrderStatus(id, input)
-}
-
-export async function payOrder(orderId: string) {
-  return getClient().payOrder(orderId)
-}
-
-export async function cancelOrder(orderId: string) {
-  return getClient().cancelOrder(orderId)
-}
-
-export async function refundOrder(orderId: string) {
-  return getClient().refundOrder(orderId)
-}
-
-export async function completeOrder(orderId: string) {
-  return getClient().completeOrder(orderId)
-}
-
-// Seller / Stripe Connect
-export async function onboardSeller() {
-  return getClient().onboardSeller()
-}
-
-export async function getOnboardStatus() {
-  return getClient().getOnboardStatus()
-}

@@ -3,11 +3,11 @@ import { render, waitFor } from "@testing-library/react"
 import { AuthHydrator } from "@/components/auth-hydrator"
 import { useAuthStore } from "@/stores/auth-store"
 
-vi.mock("@/actions/auth", () => ({
+vi.mock("@/lib/api/actions", () => ({
   getCurrentUser: vi.fn(),
 }))
 
-import { getCurrentUser } from "@/actions/auth"
+import { getCurrentUser } from "@/lib/api/actions"
 
 function resetStore() {
   useAuthStore.setState({ user: null, isLoading: true })

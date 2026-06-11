@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { getCurrentUser } from "@/actions/auth"
+import { getCurrentUser } from "@/lib/api/actions"
 import { useAuthStore } from "@/stores/auth-store"
 
 export function AuthHydrator() {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getListing, ApiRequestError } from "@/lib/api/client"
-import { getCurrentUser } from "@/actions/auth"
+import { getCurrentUser } from "@/lib/api/actions"
 import { ListingDetail } from "@/components/listings/listing-detail"
 
 type Props = {

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation"
 import { getListing, ApiRequestError } from "@/lib/api/client"
-import { getCurrentUser } from "@/actions/auth"
+import { getCurrentUser } from "@/lib/api/actions"
 import { CreateListingForm } from "@/components/listings/create-listing-form"
 
 export default async function EditListingPage({

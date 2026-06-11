@@ -8,7 +8,7 @@ const { mockPush, mockSearchParams } = vi.hoisted(() => ({
   mockSearchParams: { value: new URLSearchParams() },
 }))
 
-vi.mock("@/actions/seller", () => ({
+vi.mock("@/lib/api/actions", () => ({
   getOnboardStatus: vi.fn(),
   onboardSeller: vi.fn(),
 }))
@@ -18,7 +18,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams.value,
 }))
 
-import { getOnboardStatus, onboardSeller } from "@/actions/seller"
+import { getOnboardStatus, onboardSeller } from "@/lib/api/actions"
 import SellerOnboardPage from "./page"
 
 function wrapper({ children }: { children: React.ReactNode }) {

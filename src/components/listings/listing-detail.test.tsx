@@ -29,8 +29,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-vi.mock("@/actions/listings", async () => {
-  const actual = await vi.importActual("@/actions/listings")
+vi.mock("@/lib/api/actions", async () => {
+  const actual = await vi.importActual("@/lib/api/actions")
   return {
     ...actual,
     deleteListing: mockDeleteListing,

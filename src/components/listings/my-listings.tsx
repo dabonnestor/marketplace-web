@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { fetchMyListings } from "@/actions/listings"
+import { fetchMyListings } from "@/lib/api/actions"
 import { ListingCard } from "@/components/listings/listing-card"
 import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"

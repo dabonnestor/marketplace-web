@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ListingsContent } from "@/components/listings/listings-content"
 import type { Listing, PaginatedResponse } from "@/lib/api/types"
 
-vi.mock("@/actions/listings", () => ({
+vi.mock("@/lib/api/actions", () => ({
   fetchListings: vi.fn(),
 }))
 
@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
-import { fetchListings } from "@/actions/listings"
+import { fetchListings } from "@/lib/api/actions"
 
 const listing: Listing = {
   id: "1",

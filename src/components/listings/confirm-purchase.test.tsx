@@ -40,7 +40,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(searchParamsUrl),
 }))
 
-vi.mock("@/actions/orders", () => ({
+vi.mock("@/lib/api/actions", () => ({
   createOrder: mockCreateOrder,
   fetchOrder: mockFetchOrder,
 }))

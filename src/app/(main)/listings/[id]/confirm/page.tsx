@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getListing, ApiRequestError } from "@/lib/api/client"
-import { getCurrentUser } from "@/actions/auth"
+import { getCurrentUser } from "@/lib/api/actions"
 import { ConfirmPurchase } from "@/components/listings/confirm-purchase"
 
 type Props = {

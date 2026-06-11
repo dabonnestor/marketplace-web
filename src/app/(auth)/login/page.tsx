@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { loginSchema, type LoginInput } from "@/lib/validations/auth"
-import { login } from "@/actions/auth"
+import { login } from "@/lib/api/actions"
 import { useAuthStore } from "@/stores/auth-store"
 import { toast } from "sonner"
 

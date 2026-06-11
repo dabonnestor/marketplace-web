@@ -9,7 +9,7 @@ const { mockPush } = vi.hoisted(() => ({
   mockPush: vi.fn(),
 }))
 
-vi.mock("@/actions/orders", () => ({
+vi.mock("@/lib/api/actions", () => ({
   fetchPurchases: vi.fn(),
   fetchSales: vi.fn(),
 }))
@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
-import { fetchPurchases, fetchSales } from "@/actions/orders"
+import { fetchPurchases, fetchSales } from "@/lib/api/actions"
 
 function makeOrder(overrides: Partial<PurchaseOrder | SaleOrder> = {}): PurchaseOrder | SaleOrder {
   return {

@@ -63,7 +63,7 @@ src/
     validations/              Zod schemas (auth, listings)
     display-utils             Shared formatters, badge color maps, NoImage placeholder
     order-utils               Order status transitions, colors, labels
-    wrap-action               Server action error-boundary helper
+    api/                      Server action error-boundary helper (inlined)
     utils                     General utilities
   stores/                     Zustand stores
   test/                       Test setup

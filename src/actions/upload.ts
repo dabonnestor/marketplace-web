@@ -1,7 +1,6 @@
 "use server"
 
 import { UTApi } from "uploadthing/server"
-import { wrapAction } from "@/lib/wrap-action"
 
 export async function uploadImages(formData: FormData) {
   const files = formData.getAll("files") as File[]
@@ -10,18 +9,20 @@ export async function uploadImages(formData: FormData) {
     return { success: true as const, urls: [] as string[] }
   }
 
-  return wrapAction(
-    async () => {
-      const utapi = new UTApi()
-      const results = await utapi.uploadFiles(files)
+  try {
+    const utapi = new UTApi()
+    const results = await utapi.uploadFiles(files)
 
-      const urls = results.map((r) => {
-        if (r.error) throw new Error(r.error.message)
-        return r.data?.ufsUrl ?? r.data?.url ?? ""
-      })
+    const urls = results.map((r) => {
+      if (r.error) throw new Error(r.error.message)
+      return r.data?.ufsUrl ?? r.data?.url ?? ""
+    })
 
-      return { success: true as const, urls }
-    },
-    "Failed to upload images"
-  )
+    return { success: true as const, urls }
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "Failed to upload images",
+    }
+  }
 }

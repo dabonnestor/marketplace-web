@@ -33,7 +33,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-vi.mock("@/actions/listings", () => ({
+vi.mock("@/lib/api/actions", () => ({
   createListing: mockCreateListing,
   updateListing: mockUpdateListing,
   deleteListing: mockDeleteListing,

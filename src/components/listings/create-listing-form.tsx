@@ -38,7 +38,7 @@ import {
   CATEGORIES,
   CONDITIONS,
 } from "@/lib/validations/listings"
-import { createListing, updateListing, deleteListing } from "@/actions/listings"
+import { createListing, updateListing, deleteListing } from "@/lib/api/actions"
 import { uploadImages } from "@/actions/upload"
 import type { Listing } from "@/lib/api/types"
 import {

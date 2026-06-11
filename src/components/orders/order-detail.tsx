@@ -11,7 +11,7 @@ import {
   cancelOrder,
   completeOrder,
   refundOrder,
-} from "@/actions/orders"
+} from "@/lib/api/actions"
 import { StripePaymentForm } from "@/components/checkout/stripe-payment-form"
 import {
   getValidTransitions,

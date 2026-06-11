@@ -30,7 +30,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-vi.mock("@/actions/orders", () => ({
+vi.mock("@/lib/api/actions", () => ({
   fetchOrder: mockFetchOrder,
   updateOrderStatus: mockUpdateOrderStatus,
   cancelOrder: mockCancelOrder,

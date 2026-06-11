@@ -19,7 +19,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useAuthStore } from "@/stores/auth-store"
-import { logout } from "@/actions/auth"
+import { logout } from "@/lib/api/actions"
 import { Menu, Package, Plus, User } from "lucide-react"
 import { toast } from "sonner"
 import { ThemeToggle } from "./theme-toggle"
