@@ -20,6 +20,7 @@ import {
 } from "@/lib/order-utils"
 import { cn } from "@/lib/utils"
 import { formatCurrency, badgeClasses, NoImage } from "@/lib/display-utils"
+import { PriceRow } from "@/components/ui/price-row"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -59,25 +60,6 @@ function actionLabel(status: OrderStatus): string {
     default:
       return `Mark as ${statusLabel(status)}`
   }
-}
-
-function PriceRow({
-  label,
-  amount,
-  bold,
-}: {
-  label: string
-  amount: string
-  bold?: boolean
-}) {
-  return (
-    <div className="flex justify-between text-sm">
-      <span className={bold ? "font-semibold" : "text-muted-foreground"}>
-        {label}
-      </span>
-      <span className={bold ? "font-semibold" : ""}>{amount}</span>
-    </div>
-  )
 }
 
 function StatusProgress({ status }: { status: OrderStatus }) {

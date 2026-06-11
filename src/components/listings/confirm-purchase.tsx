@@ -12,25 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import type { Listing, Order } from "@/lib/api/types"
 import { formatCurrency } from "@/lib/display-utils"
-
-function PriceRow({
-  label,
-  amount,
-  bold,
-}: {
-  label: string
-  amount: string
-  bold?: boolean
-}) {
-  return (
-    <div className="flex justify-between text-sm">
-      <span className={bold ? "font-semibold" : "text-muted-foreground"}>
-        {label}
-      </span>
-      <span className={bold ? "font-semibold" : ""}>{amount}</span>
-    </div>
-  )
-}
+import { PriceRow } from "@/components/ui/price-row"
 
 export function ConfirmPurchase({
   listing,
