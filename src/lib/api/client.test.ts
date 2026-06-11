@@ -467,3 +467,54 @@ describe("server-action wrapped exports", () => {
     })
   })
 })
+
+// ── RSC data-fetching deduplication ──
+
+describe("RSC data fetching (cached for request dedup)", () => {
+  let store: MemoryTokenStore
+  let client: ReturnType<typeof createApiClient>
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    store = new MemoryTokenStore()
+    client = createApiClient(store as TokenStore)
+    __setClientForTest(client)
+  })
+
+  function jsonResponse(data: unknown, status = 200): Response {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
+
+  it("getListing returns listing data through the cached wrapper", async () => {
+    const listing = { id: "l1", title: "Cached Listing", description: "desc", price: 99, images: [], category: "other", status: "active", sellerId: "s1", createdAt: "2026-01-01", updatedAt: "2026-01-01" }
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(listing))
+
+    const { getListing } = await import("./client")
+    const result = await getListing("l1")
+
+    expect(result).toMatchObject({ id: "l1", title: "Cached Listing" })
+  })
+
+  it("getListing propagates errors through the cached wrapper", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: "NOT_FOUND", message: "Listing not found" } }), { status: 404 })
+    )
+
+    const { getListing, ApiRequestError } = await import("./client")
+
+    await expect(getListing("nonexistent")).rejects.toThrow(ApiRequestError)
+  })
+
+  it("getOrder returns order data through the cached wrapper", async () => {
+    const order = { id: "o1", listingId: "l1", buyerId: "b1", sellerId: "s1", status: "pending", totalAmount: 99, createdAt: "2026-01-01", updatedAt: "2026-01-01" }
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(order))
+
+    const { getOrder } = await import("./client")
+    const result = await getOrder("o1")
+
+    expect(result).toMatchObject({ id: "o1", status: "pending" })
+  })
+})

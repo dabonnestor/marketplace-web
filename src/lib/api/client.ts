@@ -1,3 +1,4 @@
+import { cache } from "react"
 import type {
   AuthResponse,
   User,
@@ -326,47 +327,49 @@ export async function withErrorBoundary<T extends Record<string, unknown>>(
 }
 
 // ── Raw data-fetching (for RSC pages — throw on error) ──
+// Wrapped with React.cache() so generateMetadata + page render
+// reuse the same promise instead of making duplicate backend requests.
 
-export async function getMe() {
+export const getMe = cache(async () => {
   return getClient().getMe()
-}
+})
 
-export async function getListings(params?: {
+export const getListings = cache(async (params?: {
   page?: number
   limit?: number
   category?: string
   minPrice?: number
   maxPrice?: number
   search?: string
-}) {
+}) => {
   return getClient().getListings(params)
-}
+})
 
-export async function getListing(id: string) {
+export const getListing = cache(async (id: string) => {
   return getClient().getListing(id)
-}
+})
 
-export async function getMyListings(params?: { page?: number; limit?: number }) {
+export const getMyListings = cache(async (params?: { page?: number; limit?: number }) => {
   return getClient().getMyListings(params)
-}
+})
 
-export async function getOrder(id: string) {
+export const getOrder = cache(async (id: string) => {
   return getClient().getOrder(id)
-}
+})
 
-export async function getPurchases(params?: {
+export const getPurchases = cache(async (params?: {
   page?: number
   limit?: number
   status?: string
-}) {
+}) => {
   return getClient().getPurchases(params)
-}
+})
 
-export async function getSales(params?: {
+export const getSales = cache(async (params?: {
   page?: number
   limit?: number
   status?: string
-}) {
+}) => {
   return getClient().getSales(params)
-}
+})
 
