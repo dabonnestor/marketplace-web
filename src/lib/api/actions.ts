@@ -3,26 +3,40 @@
 import { getClient, withErrorBoundary, getMe } from "./client"
 import type { CreateListingInput, UpdateListingInput, OrderStatusTransition } from "./types"
 
-// Auth
-export async function login(email: string, password: string) {
-  return withErrorBoundary(
-    async () => {
-      const user = await getClient().login(email, password)
-      return { user }
-    },
-    "Login failed"
-  )
+// ── Factory ──
+// Wraps any async function with withErrorBoundary so every server action
+// returns { success: true, ...data } | { success: false, error }.
+// The fn should return the already-shaped data object (e.g. { listing }, { order }, etc.)
+// because withErrorBoundary spreads it: { success: true, ...data }.
+
+type ActionOk<T extends Record<string, unknown>> = T & { success: true }
+type ActionErr = { success: false; error: string }
+
+function serverAction<Args extends unknown[], T extends Record<string, unknown>>(
+  fn: (...args: Args) => Promise<T>,
+  fallbackError: string
+): (...args: Args) => Promise<ActionOk<T> | ActionErr> {
+  return (...args: Args) =>
+    withErrorBoundary(async () => fn(...args), fallbackError)
 }
 
-export async function register(email: string, password: string, name: string) {
-  return withErrorBoundary(
-    async () => {
-      const user = await getClient().register(email, password, name)
-      return { user }
-    },
-    "Registration failed"
-  )
-}
+// Auth
+
+export const login = serverAction(
+  async (email: string, password: string) => {
+    const user = await getClient().login(email, password)
+    return { user }
+  },
+  "Login failed"
+)
+
+export const register = serverAction(
+  async (email: string, password: string, name: string) => {
+    const user = await getClient().register(email, password, name)
+    return { user }
+  },
+  "Registration failed"
+)
 
 export async function getCurrentUser() {
   try {
@@ -37,192 +51,99 @@ export async function logout() {
 }
 
 // Listings
-export async function fetchListings(params?: {
-  page?: number
-  limit?: number
-  category?: string
-  minPrice?: number
-  maxPrice?: number
-  search?: string
-}) {
-  return withErrorBoundary(
-    async () => {
-      const result = await getClient().getListings(params)
-      return { ...result }
-    },
-    "Failed to fetch listings"
-  )
-}
 
-export async function fetchListing(id: string) {
-  return withErrorBoundary(
-    async () => {
-      const listing = await getClient().getListing(id)
-      return { listing }
-    },
-    "Failed to fetch listing"
-  )
-}
+export const fetchListings = serverAction(
+  (params?: { page?: number; limit?: number; category?: string; minPrice?: number; maxPrice?: number; search?: string }) =>
+    getClient().getListings(params),
+  "Failed to fetch listings"
+)
 
-export async function createListing(input: CreateListingInput) {
-  return withErrorBoundary(
-    async () => {
-      const listing = await getClient().createListing(input)
-      return { listing }
-    },
-    "Failed to create listing"
-  )
-}
+export const fetchListing = serverAction(
+  (id: string) => getClient().getListing(id).then(listing => ({ listing })),
+  "Failed to fetch listing"
+)
 
-export async function updateListing(id: string, input: UpdateListingInput) {
-  return withErrorBoundary(
-    async () => {
-      const listing = await getClient().updateListing(id, input)
-      return { listing }
-    },
-    "Failed to update listing"
-  )
-}
+export const createListing = serverAction(
+  (input: CreateListingInput) => getClient().createListing(input).then(listing => ({ listing })),
+  "Failed to create listing"
+)
 
-export async function deleteListing(id: string) {
-  return withErrorBoundary(
-    async () => {
-      await getClient().deleteListing(id)
-      return {}
-    },
-    "Failed to delete listing"
-  )
-}
+export const updateListing = serverAction(
+  (id: string, input: UpdateListingInput) => getClient().updateListing(id, input).then(listing => ({ listing })),
+  "Failed to update listing"
+)
 
-export async function fetchMyListings(params?: { page?: number; limit?: number }) {
-  return withErrorBoundary(
-    async () => {
-      const result = await getClient().getMyListings(params)
-      return { ...result }
-    },
-    "Failed to fetch your listings"
-  )
-}
+export const deleteListing = serverAction(
+  async (id: string) => {
+    await getClient().deleteListing(id)
+    return {}
+  },
+  "Failed to delete listing"
+)
+
+export const fetchMyListings = serverAction(
+  (params?: { page?: number; limit?: number }) => getClient().getMyListings(params),
+  "Failed to fetch your listings"
+)
 
 // Orders
-export async function createOrder(listingId: string) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().createOrder(listingId)
-      return { order }
-    },
-    "Failed to create order"
-  )
-}
 
-export async function fetchOrder(id: string) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().getOrder(id)
-      return { order }
-    },
-    "Failed to fetch order"
-  )
-}
+export const createOrder = serverAction(
+  (listingId: string) => getClient().createOrder(listingId).then(order => ({ order })),
+  "Failed to create order"
+)
 
-export async function fetchPurchases(params?: {
-  page?: number
-  limit?: number
-  status?: string
-}) {
-  return withErrorBoundary(
-    async () => {
-      const result = await getClient().getPurchases(params)
-      return { ...result }
-    },
-    "Failed to fetch purchases"
-  )
-}
+export const fetchOrder = serverAction(
+  (id: string) => getClient().getOrder(id).then(order => ({ order })),
+  "Failed to fetch order"
+)
 
-export async function fetchSales(params?: {
-  page?: number
-  limit?: number
-  status?: string
-}) {
-  return withErrorBoundary(
-    async () => {
-      const result = await getClient().getSales(params)
-      return { ...result }
-    },
-    "Failed to fetch sales"
-  )
-}
+export const fetchPurchases = serverAction(
+  (params?: { page?: number; limit?: number; status?: string }) => getClient().getPurchases(params),
+  "Failed to fetch purchases"
+)
 
-export async function updateOrderStatus(
-  id: string,
-  input: OrderStatusTransition
-) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().updateOrderStatus(id, input)
-      return { order }
-    },
-    "Failed to update order status"
-  )
-}
+export const fetchSales = serverAction(
+  (params?: { page?: number; limit?: number; status?: string }) => getClient().getSales(params),
+  "Failed to fetch sales"
+)
 
-export async function payOrder(orderId: string) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().payOrder(orderId)
-      return { order }
-    },
-    "Failed to process payment"
-  )
-}
+export const updateOrderStatus = serverAction(
+  (id: string, input: OrderStatusTransition) => getClient().updateOrderStatus(id, input).then(order => ({ order })),
+  "Failed to update order status"
+)
 
-export async function cancelOrder(orderId: string) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().cancelOrder(orderId)
-      return { order }
-    },
-    "Failed to cancel order"
-  )
-}
+export const payOrder = serverAction(
+  (orderId: string) => getClient().payOrder(orderId).then(order => ({ order })),
+  "Failed to process payment"
+)
 
-export async function refundOrder(orderId: string) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().refundOrder(orderId)
-      return { order }
-    },
-    "Failed to refund order"
-  )
-}
+export const cancelOrder = serverAction(
+  (orderId: string) => getClient().cancelOrder(orderId).then(order => ({ order })),
+  "Failed to cancel order"
+)
 
-export async function completeOrder(orderId: string) {
-  return withErrorBoundary(
-    async () => {
-      const order = await getClient().completeOrder(orderId)
-      return { order }
-    },
-    "Failed to complete order"
-  )
-}
+export const refundOrder = serverAction(
+  (orderId: string) => getClient().refundOrder(orderId).then(order => ({ order })),
+  "Failed to refund order"
+)
+
+export const completeOrder = serverAction(
+  (orderId: string) => getClient().completeOrder(orderId).then(order => ({ order })),
+  "Failed to complete order"
+)
 
 // Seller / Stripe Connect
-export async function onboardSeller() {
-  return withErrorBoundary(
-    async () => {
-      const result = await getClient().onboardSeller()
-      return { url: result.url }
-    },
-    "Failed to start seller onboarding"
-  )
-}
 
-export async function getOnboardStatus() {
-  return withErrorBoundary(
-    async () => {
-      const result = await getClient().getOnboardStatus()
-      return { ...result }
-    },
-    "Failed to check onboarding status"
-  )
-}
+export const onboardSeller = serverAction(
+  async () => {
+    const result = await getClient().onboardSeller()
+    return { url: result.url }
+  },
+  "Failed to start seller onboarding"
+)
+
+export const getOnboardStatus = serverAction(
+  () => getClient().getOnboardStatus(),
+  "Failed to check onboarding status"
+)
