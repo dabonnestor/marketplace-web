@@ -1,12 +1,12 @@
 import { Suspense } from "react"
-import { PurchaseHistory } from "@/components/orders/purchase-history"
+import { OrderList } from "@/components/orders/order-list"
 
 export default function PurchasesPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">My Purchases</h1>
       <Suspense>
-        <PurchaseHistory />
+        <OrderList role="buyer" />
       </Suspense>
     </div>
   )

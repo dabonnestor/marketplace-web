@@ -1,12 +1,12 @@
 import { Suspense } from "react"
-import { SalesHistory } from "@/components/orders/sales-history"
+import { OrderList } from "@/components/orders/order-list"
 
 export default function SalesPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">My Sales</h1>
       <Suspense>
-        <SalesHistory />
+        <OrderList role="seller" />
       </Suspense>
     </div>
   )
