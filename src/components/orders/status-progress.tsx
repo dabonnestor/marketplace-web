@@ -1,23 +1,15 @@
 import { Fragment } from "react"
 import { cn } from "@/lib/utils"
-import { statusLabel } from "@/lib/order-utils"
+import { statusLabel, progressSteps } from "@/lib/order-state-machine"
 import type { OrderStatus } from "@/lib/api/types"
 
-const STATUS_STEPS: OrderStatus[] = [
-  "pending",
-  "paid",
-  "shipped",
-  "delivered",
-  "completed",
-]
-
 export function StatusProgress({ status }: { status: OrderStatus }) {
-  const currentIdx = STATUS_STEPS.indexOf(status)
+  const currentIdx = progressSteps.indexOf(status)
   const isTerminal = currentIdx === -1
 
   return (
     <div className="flex items-center gap-1">
-      {STATUS_STEPS.map((step, i) => {
+      {progressSteps.map((step, i) => {
         const isReached = !isTerminal && i <= currentIdx
         const isCurrent = i === currentIdx
         const isFuture = !isReached
@@ -44,7 +36,7 @@ export function StatusProgress({ status }: { status: OrderStatus }) {
                 {statusLabel(step)}
               </span>
             </div>
-            {i < STATUS_STEPS.length - 1 && (
+            {i < progressSteps.length - 1 && (
               <div
                 className={cn(
                   "h-px flex-1 mt-[-1.25rem]",

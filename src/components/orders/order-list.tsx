@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPurchases, fetchSales } from "@/lib/api/actions"
 import type { PurchaseOrder, SaleOrder, Pagination } from "@/lib/api/types"
-import { statusColor, statusLabel } from "@/lib/order-utils"
+import { statusColor, statusLabel, allStatuses } from "@/lib/order-state-machine"
 import { badgeClasses, NoImage } from "@/lib/display-utils"
 import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -21,18 +21,6 @@ function counterpartyName(order: Order, role: Role): string {
     ? (order as PurchaseOrder).sellerName
     : (order as SaleOrder).buyerName
 }
-
-const STATUSES = [
-  "pending",
-  "paid",
-  "shipped",
-  "delivered",
-  "completed",
-  "disputed",
-  "cancelled",
-  "expired",
-  "refunded",
-] as const
 
 function formatDate(iso: string) {
   return dayjs(iso.split("T")[0]).format("M/D/YYYY")
@@ -92,7 +80,7 @@ function StatusTabs({
       >
         All
       </button>
-      {STATUSES.map((s) => (
+      {allStatuses.map((s) => (
         <button
           key={s}
           role="tab"
@@ -146,7 +134,7 @@ export function OrderList({ role }: OrderListProps) {
           <div className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground">
             All
           </div>
-          {STATUSES.map((s) => (
+          {allStatuses.map((s) => (
             <div
               key={s}
               className="px-3 py-1.5 text-sm rounded-md capitalize text-muted-foreground"

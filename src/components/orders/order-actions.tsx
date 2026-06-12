@@ -1,21 +1,6 @@
 import { Button } from "@/components/ui/button"
-import { statusLabel } from "@/lib/order-utils"
+import { actionLabel } from "@/lib/order-state-machine"
 import type { OrderStatus } from "@/lib/api/types"
-
-function actionLabel(status: OrderStatus): string {
-  switch (status) {
-    case "paid":
-      return "Mark as Paid"
-    case "shipped":
-      return "Mark as Shipped"
-    case "delivered":
-      return "Mark as Delivered"
-    case "completed":
-      return "Mark as Completed"
-    default:
-      return `Mark as ${statusLabel(status)}`
-  }
-}
 
 interface OrderActionsProps {
   validTransitions: OrderStatus[]

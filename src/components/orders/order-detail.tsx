@@ -15,9 +15,13 @@ import {
 } from "@/lib/api/actions"
 import {
   getValidTransitions,
+  canCancel,
+  canRefund,
+  canCompletePayment,
   statusColor,
   statusLabel,
-} from "@/lib/order-utils"
+  shouldPoll,
+} from "@/lib/order-state-machine"
 import { cn } from "@/lib/utils"
 import { badgeClasses, NoImage } from "@/lib/display-utils"
 import { StatusProgress } from "./status-progress"
@@ -59,8 +63,7 @@ export function OrderDetail({
     refetchInterval: (query) => {
       const data = query.state.data
       if (!data) return 30000
-      const terminalStatuses: OrderStatus[] = ["completed", "cancelled", "expired", "refunded"]
-      return terminalStatuses.includes(data.status) ? false : 30000
+      return shouldPoll(data.status) ? 30000 : false
     },
   })
 
@@ -83,14 +86,9 @@ export function OrderDetail({
 
   const validTransitions = getValidTransitions(order.status, role)
 
-  const canCancel = role === "buyer" && order.status === "pending"
-  const canRefund =
-    role === "buyer" &&
-    (order.status === "paid" ||
-      order.status === "shipped" ||
-      order.status === "delivered")
-  const canCompletePayment =
-    role === "buyer" && order.status === "pending" && !!order.clientSecret
+  const canCancelOrder = canCancel(order.status, role)
+  const canRefundOrder = canRefund(order.status, role)
+  const canCompletePaymentFlag = canCompletePayment(order.status, role, !!order.clientSecret)
 
   const orderQueryKeys: QueryKey[] = [
     ["purchases"],
@@ -177,14 +175,14 @@ export function OrderDetail({
 
       <OrderActions
         validTransitions={validTransitions}
-        canCancel={canCancel}
-        canRefund={canRefund}
+        canCancel={canCancelOrder}
+        canRefund={canRefundOrder}
         onAction={setTargetStatus}
         onCancel={() => setShowCancelConfirm(true)}
         onRefund={() => setShowRefundConfirm(true)}
       />
 
-      {canCompletePayment && (
+      {canCompletePaymentFlag && (
         <PaymentFallback
           clientSecret={order.clientSecret!}
           orderId={order.id}
