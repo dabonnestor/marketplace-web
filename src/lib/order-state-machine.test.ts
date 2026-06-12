@@ -11,6 +11,7 @@ import {
   isTerminal,
   shouldPoll,
   allStatuses,
+  badgeClasses,
 } from "./order-state-machine"
 import type { OrderStatus } from "./api/types"
 
@@ -161,6 +162,26 @@ describe("statusColor", () => {
     expect(statusColor("cancelled")).toBe("red")
     expect(statusColor("expired")).toBe("red")
     expect(statusColor("refunded")).toBe("red")
+  })
+})
+
+describe("badgeClasses", () => {
+  it("maps the same color keys as statusColor", () => {
+    const statuses: OrderStatus[] = [
+      "pending", "paid", "shipped", "delivered",
+      "completed", "disputed", "cancelled", "expired", "refunded",
+    ]
+    for (const s of statuses) {
+      const color = statusColor(s)
+      expect(badgeClasses).toHaveProperty(color)
+    }
+  })
+
+  it("each entry is a non-empty CSS class string", () => {
+    for (const cls of Object.values(badgeClasses)) {
+      expect(cls).toBeTruthy()
+      expect(typeof cls).toBe("string")
+    }
   })
 })
 

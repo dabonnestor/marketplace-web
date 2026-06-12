@@ -5,11 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { Listing } from "@/lib/api/types"
-import {
-  conditionBadgeClass,
-  statusBadgeClass,
-  NoImage,
-} from "@/lib/display-utils"
+import { conditionBadgeClass, statusBadgeClass } from "@/lib/listing-utils"
+import { NoImage } from "@/components/ui/no-image"
 
 export function ListingCard({
   listing,

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import type { Listing, Order } from "@/lib/api/types"
-import { formatCurrency } from "@/lib/display-utils"
+import { formatCurrency } from "@/lib/format-currency"
 import { PriceRow } from "@/components/ui/price-row"
 
 export function ConfirmPurchase({

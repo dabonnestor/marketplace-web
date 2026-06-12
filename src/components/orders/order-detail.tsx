@@ -21,9 +21,10 @@ import {
   statusColor,
   statusLabel,
   shouldPoll,
+  badgeClasses,
 } from "@/lib/order-state-machine"
 import { cn } from "@/lib/utils"
-import { badgeClasses, NoImage } from "@/lib/display-utils"
+import { NoImage } from "@/components/ui/no-image"
 import { StatusProgress } from "./status-progress"
 import { OrderSummary } from "./order-summary"
 import { ConfirmDialog } from "./confirm-dialog"
