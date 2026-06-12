@@ -66,7 +66,7 @@ export interface Pagination {
   totalPages: number
 }
 
-export interface PaginatedResponse<T> {
+export type PaginatedResponse<T> = {
   data: T[]
   pagination: Pagination
 }
@@ -124,7 +124,7 @@ export interface OnboardSellerResponse {
   url: string
 }
 
-export interface OnboardStatusResponse {
+export type OnboardStatusResponse = {
   onboarded: boolean
   chargesEnabled: boolean
   payoutsEnabled: boolean

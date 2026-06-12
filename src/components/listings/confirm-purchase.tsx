@@ -72,15 +72,15 @@ export function ConfirmPurchase({
 
   useEffect(() => {
     if (!orderResult) return
-    if (orderResult.success && orderResult.order) {
+    if (!orderResult.success) {
+      toast.error(orderResult.error)
+      router.replace(window.location.pathname)
+    } else if (orderResult.order) {
       if (orderResult.order.status === "pending") {
         setOrder(orderResult.order)
       } else {
         router.push(`/orders/${orderResult.order.id}`)
       }
-    } else {
-      toast.error(orderResult.error || "Failed to fetch order")
-      router.replace(window.location.pathname)
     }
   }, [orderResult, router])
 

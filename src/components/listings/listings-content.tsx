@@ -10,7 +10,6 @@ import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 
-
 export function ListingsContent() {
   const searchParams = useSearchParams()
 

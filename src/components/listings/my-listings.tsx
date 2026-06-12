@@ -8,7 +8,6 @@ import { ListingCard } from "@/components/listings/listing-card"
 import { PaginationControls } from "@/components/listings/pagination-controls"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import type { Listing, Pagination } from "@/lib/api/types"
 
 export function MyListings() {
   const searchParams = useSearchParams()
@@ -49,10 +48,7 @@ export function MyListings() {
     )
   }
 
-  const { data: listings, pagination } = data as {
-    data: Listing[]
-    pagination: Pagination
-  }
+  const { data: listings, pagination } = data
 
   if (listings.length === 0) {
     return (

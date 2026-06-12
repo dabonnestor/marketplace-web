@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest"
 import { usePollingStatus } from "./use-polling-status"
+import type { OrderStatus } from "@/lib/api/types"
 
-function query(data: { status: string } | undefined | null) {
-  return { state: { data } }
+function query(data: { status: OrderStatus } | undefined | null) {
+  return { state: { data } } as { state: { data?: { status: OrderStatus } | null } }
 }
 
 describe("usePollingStatus", () => {

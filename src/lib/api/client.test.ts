@@ -385,8 +385,9 @@ describe("server-action wrapped exports", () => {
       const result = await fetchListing("123")
 
       expect(result.success).toBe(false)
-      // ApiRequestError.message is "Request failed" (apiFetch's fallback)
-      expect(result.error).toBe("Request failed")
+      if (!result.success) {
+        expect(result.error).toBe("Request failed")
+      }
     })
   })
 

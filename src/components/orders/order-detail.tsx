@@ -55,8 +55,9 @@ export function OrderDetail({
     queryKey: ["order", initialOrder.id],
     queryFn: async () => {
       const result = await fetchOrder(initialOrder.id)
-      if (result.success && result.order) return result.order
-      throw new Error(result.error || "Failed to fetch order")
+      if (!result.success) throw new Error(result.error)
+      if (result.order) return result.order
+      throw new Error("Failed to fetch order")
     },
     initialData: initialOrder,
     refetchInterval: usePollingStatus(),
