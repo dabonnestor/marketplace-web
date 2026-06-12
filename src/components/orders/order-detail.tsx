@@ -26,9 +26,7 @@ import { cn } from "@/lib/utils"
 import { badgeClasses, NoImage } from "@/lib/display-utils"
 import { StatusProgress } from "./status-progress"
 import { OrderSummary } from "./order-summary"
-import { CancelDialog } from "./cancel-dialog"
-import { RefundDialog } from "./refund-dialog"
-import { StatusTransitionDialog } from "./status-transition-dialog"
+import { ConfirmDialog } from "./confirm-dialog"
 import { PaymentFallback } from "./payment-fallback"
 import { OrderActions } from "./order-actions"
 import type {
@@ -190,32 +188,45 @@ export function OrderDetail({
         />
       )}
 
-      <StatusTransitionDialog
+      <ConfirmDialog
         open={!!targetStatus}
-        targetStatus={targetStatus}
         onOpenChange={(open) => {
           if (!open) setTargetStatus(null)
         }}
-        onConfirm={(status) => handleAction(status)}
+        onConfirm={() => targetStatus && handleAction(targetStatus)}
         isPending={isPending}
+        title="Confirm Action"
+        description={`Are you sure you want to mark this order as ${targetStatus?.toLowerCase()}?`}
+        confirmPendingLabel="Confirming..."
+        warning={
+          targetStatus === "completed"
+            ? "This transfers payment to the seller"
+            : undefined
+        }
       />
 
-      <CancelDialog
+      <ConfirmDialog
         open={showCancelConfirm}
         onOpenChange={(open) => {
           if (!open) setShowCancelConfirm(false)
         }}
         onConfirm={() => handleCancel()}
         isPending={cancelPending}
+        title="Confirm Cancellation"
+        description="Are you sure you want to cancel this order?"
+        confirmPendingLabel="Cancelling..."
       />
 
-      <RefundDialog
+      <ConfirmDialog
         open={showRefundConfirm}
         onOpenChange={(open) => {
           if (!open) setShowRefundConfirm(false)
         }}
         onConfirm={() => handleRefund()}
         isPending={refundPending}
+        title="Confirm Refund Request"
+        description="Are you sure you want to request a refund for this order?"
+        confirmPendingLabel="Requesting..."
       />
     </div>
   )
