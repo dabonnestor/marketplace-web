@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { QueryKey } from "@tanstack/react-query"
 import { useAction } from "@/hooks/use-action"
+import { usePollingStatus } from "@/hooks/use-polling-status"
 import {
   fetchOrder,
   updateOrderStatus,
@@ -20,7 +21,6 @@ import {
   canCompletePayment,
   statusColor,
   statusLabel,
-  shouldPoll,
   badgeClasses,
 } from "@/lib/order-state-machine"
 import { cn } from "@/lib/utils"
@@ -59,11 +59,7 @@ export function OrderDetail({
       throw new Error(result.error || "Failed to fetch order")
     },
     initialData: initialOrder,
-    refetchInterval: (query) => {
-      const data = query.state.data
-      if (!data) return 30000
-      return shouldPoll(data.status) ? 30000 : false
-    },
+    refetchInterval: usePollingStatus(),
   })
 
   const [targetStatus, setTargetStatus] = useState<OrderStatus | null>(null)
