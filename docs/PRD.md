@@ -212,6 +212,19 @@ The order detail page shows valid next statuses based on the current status and 
 - **502 PAYMENT_SERVICE_UNAVAILABLE** — sonner toast "Payment service is currently unavailable".
 - **Error boundaries** on listing pages and dashboard pages protect against uncaught errors and show retry buttons.
 
+### CI/CD Pipeline
+
+- **GitHub Actions** runs a single CI job on every push to a PR branch and every push to main.
+- **Checks** run sequentially: `npm run lint` → `npx tsc --noEmit` → `npm test`. All must pass for the pipeline to succeed.
+- **Production deployment** on push to main: if CI passes, a deploy job calls `vercel --prod`. A `VERCEL_TOKEN` secret stored in GitHub Secrets authenticates the deploy.
+- **Preview deployments** are handled by the Vercel GitHub App, which auto-deploys preview URLs on every push to a PR and comments the URL on the PR.
+- **Branch protection** on main requires CI checks to pass and a PR review before merge. Direct pushes to main by the pipeline bypass this requirement.
+- **Node version** is pinned to 22 via `package.json` `engines` field and `.nvmrc`. CI reads from the `NODE_VERSION` env var in the workflow.
+- **npm cache** is cached by `actions/setup-node` with `cache: 'npm'` based on `package-lock.json` hash.
+- **Environment variables** are managed in the Vercel dashboard per environment (Preview, Production). CI-only values (if any) use GitHub Secrets.
+- **No `vercel.json`** — the pipeline relies on Vercel's auto-detection of Next.js.
+- **No coverage thresholds** — test coverage is informational only for now.
+
 ## Out of Scope
 
 - Social login / OAuth.
@@ -226,7 +239,6 @@ The order detail page shows valid next statuses based on the current status and 
 - Stripe Checkout (hosted page) integration.
 - Seller payout dashboard / transaction history.
 - SEO optimization beyond basic `generateMetadata`.
-- CI/CD pipeline.
 - OpenAPI type generation (manual types).
 
 ## Further Notes
