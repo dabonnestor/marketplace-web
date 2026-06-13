@@ -50,24 +50,29 @@ src/
         seller/onboard/       Stripe Connect onboarding return page
       listings/               Browse, view, create, edit, confirm purchase
       orders/[id]/            Order detail with status actions & payment
-  actions/                    Server actions (auth, listings, orders, seller, uploads)
+  actions/                    Server actions (upload)
   components/
+    auth-hydrator             Auth context initializer
+    error-boundary            Global error boundary
+    query-provider            TanStack Query provider
+    theme-provider            next-themes provider
     checkout/                 StripePaymentForm, confirm purchase
     layout/                   Navbar, theme toggle
-    listings/                 Listing cards, filters, forms, detail, onboarding banner
-    orders/                   Order detail, order list, purchase/sales history
-    ui/                       shadcn/ui primitives (button, card, dialog, etc.)
-  hooks/                      Custom React hooks
+    listings/                 Cards, filters, forms, detail, onboarding, pagination
+    orders/                   Order detail, list, summary, status, actions, confirm dialog
+    ui/                       shadcn/ui primitives + NoImage, PriceRow
+  hooks/                      useAction, usePollingStatus
   lib/
-    api/                      API client, token store adapter, shared types
+    api/                      API client, serverAction factory, token store, refresh tokens, types
     validations/              Zod schemas (auth, listings)
-    display-utils             Shared formatters, badge color maps, NoImage placeholder
-    order-utils               Order status transitions, colors, labels
-    api/                      Server action error-boundary helper (inlined)
+    format-currency           Currency formatting
+    listing-utils             Badge colors, listing helpers
+    order-state-machine       Order status transitions, colors, labels
     utils                     General utilities
-  stores/                     Zustand stores
+  stores/                     Zustand stores (auth)
   test/                       Test setup
 ```
+
 
 ## Scripts
 
