@@ -54,7 +54,6 @@ vi.mock("sonner", () => ({
 // and SelectContent's <option> children are collected via context so they render
 // inside <select>.
 vi.mock("@/components/ui/select", () => {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   interface Ctx {
     value?: string
     onValueChange?: (v: string) => void
@@ -124,7 +123,6 @@ vi.mock("@/components/ui/select", () => {
     SelectItem,
     SelectGroup,
   }
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 })
 
 async function fillValidForm() {

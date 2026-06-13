@@ -101,7 +101,7 @@ export interface CreateListingInput {
   images?: string[]
 }
 
-export interface UpdateListingInput extends Partial<CreateListingInput> {}
+export type UpdateListingInput = Partial<CreateListingInput>
 
 export interface PurchaseOrder extends Order {
   listingTitle: string

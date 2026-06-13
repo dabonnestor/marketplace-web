@@ -29,6 +29,7 @@ export function ConfirmPurchase({
 
   const [order, setOrder] = useState<Order | null>(null)
 
+  // All hooks must be called unconditionally, before any returns.
   useEffect(() => {
     if (currentUserId === null && listing.status !== "sold") {
       router.push(`/login?redirect=/listings/${listing.id}/confirm`)
@@ -48,6 +49,34 @@ export function ConfirmPurchase({
     },
   )
 
+  const { data: orderResult } = useQuery({
+    queryKey: ["order", orderIdParam],
+    queryFn: () => fetchOrder(orderIdParam!),
+    enabled: !!orderIdParam && listing.status !== "sold",
+  })
+
+  useEffect(() => {
+    if (!orderResult) return
+    if (!orderResult.success) {
+      toast.error(orderResult.error)
+      router.replace(window.location.pathname)
+    } else if (
+      orderResult.order &&
+      orderResult.order.status !== "pending"
+    ) {
+      router.push(`/orders/${orderResult.order.id}`)
+    }
+  }, [orderResult, router])
+
+  // Local state (from mutation) takes priority; query result is the fallback (refresh recovery).
+  const activeOrder =
+    order ??
+    (orderResult?.success && orderResult.order?.status === "pending"
+      ? orderResult.order
+      : null)
+
+  // --- Rendering below (all hooks above) ---
+
   if (listing.status === "sold") {
     return (
       <div className="max-w-lg mx-auto py-16 text-center space-y-4">
@@ -64,28 +93,8 @@ export function ConfirmPurchase({
     )
   }
 
-  const { data: orderResult } = useQuery({
-    queryKey: ["order", orderIdParam],
-    queryFn: () => fetchOrder(orderIdParam!),
-    enabled: !!orderIdParam,
-  })
-
-  useEffect(() => {
-    if (!orderResult) return
-    if (!orderResult.success) {
-      toast.error(orderResult.error)
-      router.replace(window.location.pathname)
-    } else if (orderResult.order) {
-      if (orderResult.order.status === "pending") {
-        setOrder(orderResult.order)
-      } else {
-        router.push(`/orders/${orderResult.order.id}`)
-      }
-    }
-  }, [orderResult, router])
-
   // Step 2: server-computed price breakdown + StripePaymentForm
-  if (order) {
+  if (activeOrder) {
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <Link
@@ -109,24 +118,24 @@ export function ConfirmPurchase({
           <CardContent className="space-y-3">
             <PriceRow
               label="Subtotal"
-              amount={formatCurrency(order.subtotal)}
+              amount={formatCurrency(activeOrder.subtotal)}
             />
             <PriceRow
               label="Shipping"
-              amount={formatCurrency(order.shippingCost)}
+              amount={formatCurrency(activeOrder.shippingCost)}
             />
             <Separator />
-            <PriceRow label="Total" amount={formatCurrency(order.total)} bold />
+            <PriceRow label="Total" amount={formatCurrency(activeOrder.total)} bold />
           </CardContent>
         </Card>
 
-        {order.clientSecret && (
+        {activeOrder.clientSecret && (
           <StripePaymentForm
-            clientSecret={order.clientSecret}
-            orderId={order.id}
+            clientSecret={activeOrder.clientSecret}
+            orderId={activeOrder.id}
             onSuccess={() => {
-              queryClient.removeQueries({ queryKey: ["order", order.id] })
-              router.push(`/orders/${order.id}`)
+              queryClient.removeQueries({ queryKey: ["order", activeOrder.id] })
+              router.push(`/orders/${activeOrder.id}`)
             }}
           />
         )}

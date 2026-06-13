@@ -30,7 +30,7 @@ const CONFIG: Record<
   Role,
   {
     queryKey: string
-    fetcher: (params?: { page?: number; limit?: number; status?: string }) => Promise<any>
+    fetcher: (params?: { page?: number; limit?: number; status?: string }) => Promise<Record<string, unknown>>
     baseUrl: string
     loadingLabel: string
     errorMessage: string
@@ -172,7 +172,7 @@ export function OrderList({ role }: OrderListProps) {
         <StatusTabs status={status} onSelect={setStatus} />
         <div className="text-center py-16">
           <p className="text-muted-foreground mb-4">
-            {data?.error ?? cfg.errorMessage}
+            {String(data?.error ?? cfg.errorMessage)}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
             Try again
